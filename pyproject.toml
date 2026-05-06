@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "deepreflect"
+version = "0.1.0"
+description = "Local AI learning memory agent — turns your AI usage into structured knowledge"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "typer>=0.12",
+    "pydantic>=2.7",
+    "sqlmodel>=0.0.21",
+    "networkx>=3.3",
+    "httpx>=0.27",
+    "anthropic>=0.30",
+    "openai>=1.35",
+    "rich>=13.7",
+    "python-dotenv>=1.0",
+    "python-multipart>=0.0.9",
+    "jinja2>=3.1",
+    "aiofiles>=23.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4", "black>=24.0"]
+
+[project.scripts]
+deepreflect = "deepreflect.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["deepreflect"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
