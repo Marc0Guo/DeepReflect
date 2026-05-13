@@ -38,8 +38,7 @@ class LLMClient:
             "messages": [{"role": "user", "content": user}],
         }
         async with httpx.AsyncClient(timeout=60) as client:
-            resp = client.post(url, headers=headers, json=body)
-            resp = await resp if hasattr(resp, "__await__") else resp
+            resp = await client.post(url, headers=headers, json=body)
             resp.raise_for_status()
             data = resp.json()
             return data["content"][0]["text"]

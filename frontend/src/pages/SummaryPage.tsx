@@ -24,6 +24,7 @@ const PERIODS: { value: Period; label: string; desc: string; icon: React.ReactNo
 export function SummaryPage() {
   const [selected, setSelected] = useState<Period>('weekly')
   const [loading, setLoading] = useState(false)
+  const [roasting, setRoasting] = useState(false)
 
   async function generate() {
     setLoading(true)
@@ -32,52 +33,93 @@ export function SummaryPage() {
     setLoading(false)
   }
 
+  async function roast() {
+    setRoasting(true)
+    window.open('/api/summary/roast', '_blank')
+    // Brief delay so button feels responsive
+    setTimeout(() => setRoasting(false), 1500)
+  }
+
   return (
     <div className="p-8 lg:p-10 max-w-3xl mx-auto space-y-8">
       <div className="animate-fade-in-up">
         <h1 className="font-display text-3xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>Summaries</h1>
-        <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Generate shareable, screenshot-friendly reports of your learning.</p>
+        <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Generate shareable, cinematic reports of your learning journey.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
-        {PERIODS.map((p) => (
-          <button key={p.value} onClick={() => setSelected(p.value)}
-            className="text-left p-5 glass glass-hover transition-all duration-300 group cursor-pointer"
-            style={{
-              borderColor: selected === p.value ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : undefined,
-              boxShadow: selected === p.value ? '0 0 24px -6px color-mix(in srgb, var(--accent) 20%, transparent), var(--glass-inner)' : undefined,
-            }}>
-            <div className="mb-3 transition-colors" style={{ color: selected === p.value ? 'var(--accent)' : 'var(--text-faint)' }}>{p.icon}</div>
-            <div className="font-display text-base font-bold" style={{ color: selected === p.value ? 'var(--accent)' : 'var(--text-primary)' }}>{p.label}</div>
-            <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{p.desc}</div>
-          </button>
-        ))}
+      {/* ROAST CARD */}
+      <div className="glass p-6 animate-fade-in-up stagger-1 relative overflow-hidden" style={{ outline: '1px solid rgba(255,69,0,.25)', background: 'linear-gradient(135deg, rgba(255,69,0,.05), rgba(255,140,0,.03))' }}>
+        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ff4500, #ff8c00, transparent)' }} />
+        <div className="flex items-start gap-4">
+          <div className="text-3xl">🔥</div>
+          <div className="flex-1">
+            <div className="font-display text-base font-bold" style={{ color: 'var(--text-primary)' }}>Chat History Roast</div>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              Let the AI roast your conversation habits in the savage style of <strong style={{ color: '#ff8c00' }}>TechRoast</strong>.
+              It'll call out your repeated questions and give you a brutally honest score.
+            </p>
+          </div>
+        </div>
+        <button onClick={roast} disabled={roasting}
+          className="w-full mt-5 py-3 text-[13px] font-semibold rounded-[14px] transition-all disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
+          style={{ background: 'linear-gradient(135deg, #ff4500, #ff8c00)', color: 'white', boxShadow: '0 4px 20px rgba(255,69,0,.3)' }}>
+          {roasting
+            ? <><div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,.3)', borderTopColor: 'white' }} /> Generating Roast…</>
+            : <><span>🎤</span> Get Roasted</>
+          }
+        </button>
+        <p className="text-[11px] mt-3 text-center" style={{ color: 'var(--text-faint)' }}>
+          Requires LLM API key — configure in Settings first.
+        </p>
       </div>
 
-      <div className="glass p-6 space-y-4 animate-fade-in-up stagger-2">
+      {/* PERIOD SELECTOR */}
+      <div className="space-y-5 animate-fade-in-up stagger-2">
+        <div className="section-label">Learning Summary</div>
+        <div className="grid grid-cols-2 gap-3">
+          {PERIODS.map((p) => (
+            <button key={p.value} onClick={() => setSelected(p.value)}
+              className="text-left p-5 glass glass-hover transition-all duration-300 group cursor-pointer"
+              style={{
+                borderColor: selected === p.value ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : undefined,
+                boxShadow: selected === p.value ? '0 0 24px -6px color-mix(in srgb, var(--accent) 20%, transparent), var(--glass-inner)' : undefined,
+              }}>
+              <div className="mb-3 transition-colors" style={{ color: selected === p.value ? 'var(--accent)' : 'var(--text-faint)' }}>{p.icon}</div>
+              <div className="font-display text-base font-bold" style={{ color: selected === p.value ? 'var(--accent)' : 'var(--text-primary)' }}>{p.label}</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{p.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass p-6 space-y-4 animate-fade-in-up stagger-3">
         <div className="section-label">What's included</div>
         <ul className="space-y-2.5">
-          {['Top topics you asked about in this period', 'Repeated weak areas flagged for review', 'AI tools used and usage counts', 'Total exchanges and concepts tracked', 'Export to PNG — share it like a year-end wrap'].map((item) => (
+          {[
+            'Activity heatmap — 30 days at a glance',
+            'Top topics you asked about in this period',
+            'Knowledge breakdown by category',
+            'Repeated weak areas flagged for review',
+            'AI tools used and usage counts',
+            'Export to PNG — share it like a year-end wrap',
+          ].map((item) => (
             <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
               {item}
             </li>
           ))}
         </ul>
-        <p className="text-[11px] pt-2" style={{ color: 'var(--text-faint)', borderTop: '1px solid var(--glass-border)' }}>
-          Opens a cinematic report page with a "Save as PNG" button — share it like Spotify Wrapped or a Bilibili year-end recap.
-        </p>
       </div>
 
       <button onClick={generate} disabled={loading}
-        className="w-full py-3.5 text-[13px] font-semibold rounded-[14px] transition-all duration-300 disabled:opacity-40 flex items-center justify-center gap-2 animate-fade-in-up stagger-3 cursor-pointer"
+        className="w-full py-3.5 text-[13px] font-semibold rounded-[14px] transition-all duration-300 disabled:opacity-40 flex items-center justify-center gap-2 animate-fade-in-up stagger-4 cursor-pointer"
         style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))', color: 'white', boxShadow: '0 4px 24px color-mix(in srgb, var(--accent) 30%, transparent)' }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
         {loading ? 'Generating...' : `Generate ${PERIODS.find((p) => p.value === selected)?.label} Summary`}
       </button>
 
-      <p className="text-[11px] text-center animate-fade-in-up stagger-4" style={{ color: 'var(--text-faint)' }}>
-        Also available via CLI:{' '}
+      <p className="text-[11px] text-center animate-fade-in-up stagger-5" style={{ color: 'var(--text-faint)' }}>
+        Also via CLI:{' '}
         <code className="font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--surface-raised)', color: 'color-mix(in srgb, var(--accent) 70%, var(--text-muted))' }}>deepreflect summary --period {selected}</code>
       </p>
     </div>

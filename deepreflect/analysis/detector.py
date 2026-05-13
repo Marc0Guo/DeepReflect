@@ -5,7 +5,7 @@ from pathlib import Path
 
 from sqlmodel import Session
 
-from deepreflect.memory.db import get_concepts, get_session
+from deepreflect.memory.db import get_concepts
 from deepreflect.memory.models import Concept
 
 

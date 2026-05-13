@@ -8,14 +8,15 @@
    ═══════════════════════════════════════════════════════ */
 
 :root {
-  --glass: rgba(255,255,255,0.12);
-  --glass-strong: rgba(255,255,255,0.18);
+  /* Zero fill — shape comes from the gradient rim, depth from blur */
+  --glass: rgba(255,255,255,0);
+  --glass-strong: rgba(255,255,255,0);
   --glass-border: rgba(255,255,255,0.18);
   --glass-border-strong: rgba(255,255,255,0.28);
-  --glass-blur: 40px;
-  --glass-inner: inset 0 1px 0 rgba(255,255,255,0.15);
-  --glass-shadow: 0 8px 32px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15);
-  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.15);
+  --glass-blur: 18px;
+  --glass-inner: inset 0 1px 0 rgba(255,255,255,0.18);
+  --glass-shadow: 0 2px 16px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06);
+  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.08);
 
   --text-primary: rgba(255,255,255,0.95);
   --text-secondary: rgba(255,255,255,0.65);
@@ -28,23 +29,25 @@
   --accent-green: #30d158;
   --accent-pink: #ff375f;
 
-  --surface-raised: rgba(255,255,255,0.08);
-  --surface-overlay: rgba(0,0,0,0.2);
+  /* Micro fills: just enough to make interactive elements visible */
+  --surface-raised: rgba(255,255,255,0.05);
+  --surface-overlay: rgba(0,0,0,0.10);
 
-  --mesh-1: #0a1628;
-  --mesh-2: #0c1a3a;
-  --mesh-3: #141e3c;
-  --mesh-spot-1: rgba(100,210,255,0.15);
-  --mesh-spot-2: rgba(191,90,242,0.12);
-  --mesh-spot-3: rgba(48,209,88,0.06);
+  /* Rich mesh so colours bleed through transparent glass */
+  --mesh-1: #070f1a;
+  --mesh-2: #090e28;
+  --mesh-3: #0d1228;
+  --mesh-spot-1: rgba(100,210,255,0.32);
+  --mesh-spot-2: rgba(191,90,242,0.26);
+  --mesh-spot-3: rgba(48,209,88,0.14);
 }
 
 [data-theme="light"] {
-  --glass: rgba(255,255,255,0.55);
-  --glass-strong: rgba(255,255,255,0.72);
+  --glass: rgba(255,255,255,0.12);
+  --glass-strong: rgba(255,255,255,0.20);
   --glass-border: rgba(255,255,255,0.60);
   --glass-border-strong: rgba(255,255,255,0.80);
-  --glass-blur: 40px;
+  --glass-blur: 16px;
   --glass-inner: inset 0 1px 0 rgba(255,255,255,0.85);
   --glass-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
   --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.6);
@@ -60,15 +63,15 @@
   --accent-green: #34c759;
   --accent-pink: #ff2d55;
 
-  --surface-raised: rgba(255,255,255,0.45);
-  --surface-overlay: rgba(255,255,255,0.3);
+  --surface-raised: rgba(255,255,255,0.14);
+  --surface-overlay: rgba(255,255,255,0.10);
 
-  --mesh-1: #dfe9f3;
-  --mesh-2: #e8def0;
-  --mesh-3: #d4e4f7;
-  --mesh-spot-1: rgba(0,122,255,0.12);
-  --mesh-spot-2: rgba(175,82,222,0.10);
-  --mesh-spot-3: rgba(52,199,89,0.06);
+  --mesh-1: #cddcef;
+  --mesh-2: #d9cfeb;
+  --mesh-3: #c8ddf2;
+  --mesh-spot-1: rgba(0,122,255,0.20);
+  --mesh-spot-2: rgba(175,82,222,0.18);
+  --mesh-spot-3: rgba(52,199,89,0.10);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -107,39 +110,160 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @layer components {
+
+  /* ── Standalone .liquid-glass (Apple ultra-thin spec) ─────────────────── */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.01);
+    background-blend-mode: luminosity;
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: none;
+    border-radius: 20px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Static rim — shared by all glass variants ────────────────────────────
+     Apple's liquid glass has a strong top highlight, near-invisible sides,
+     and a soft bottom reflection. The ::before encodes exactly that.        */
+  .liquid-glass::before,
+  .glass::before,
+  .glass-strong::before,
+  .glass-subtle::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      170deg,
+      rgba(255,255,255,0.55) 0%,
+      rgba(255,255,255,0.20) 18%,
+      rgba(255,255,255,0.04) 40%,
+      rgba(255,255,255,0)    55%,
+      rgba(255,255,255,0.04) 72%,
+      rgba(255,255,255,0.18) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Light mode static rim — bright, clean */
+  [data-theme="light"] .liquid-glass::before,
+  [data-theme="light"] .glass::before,
+  [data-theme="light"] .glass-strong::before,
+  [data-theme="light"] .glass-subtle::before {
+    background: linear-gradient(
+      170deg,
+      rgba(255,255,255,1)    0%,
+      rgba(255,255,255,0.55) 18%,
+      rgba(255,255,255,0.10) 40%,
+      rgba(255,255,255,0.06) 55%,
+      rgba(255,255,255,0.18) 78%,
+      rgba(255,255,255,0.65) 100%
+    );
+  }
+
+  /* ── Dynamic rim — mouse-following spotlight ──────────────────────────────
+     ::after uses the same 1px-frame mask but a radial-gradient whose
+     centre tracks the cursor (--mouse-x / --mouse-y from JS lerp).
+
+     Asymmetric transitions:
+       • Enter (hover state):  fast — 0.08s, so it feels instant/snappy
+       • Leave (base state):   slow — 0.9s ease-out, so the glow "melts away"
+     This gives the silky, liquid feel the user is after.                    */
+  .liquid-glass::after,
+  .glass::after,
+  .glass-strong::after,
+  .glass-subtle::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(
+      ellipse 80% 60% at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(255,255,255,0.90) 0%,
+      rgba(255,255,255,0.30) 35%,
+      rgba(255,255,255,0)    65%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 2;
+    /* Slow fade-out so glow lingers (leave transition) */
+    opacity: 0;
+    transition: opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Fast fade-in on hover (enter transition overrides the rule above) */
+  .liquid-glass:hover::after,
+  .glass:hover::after,
+  .glass-strong:hover::after,
+  .glass-subtle:hover::after {
+    opacity: 1;
+    transition: opacity 0.08s ease;
+  }
+
+  /* Light mode spotlight */
+  [data-theme="light"] .glass::after,
+  [data-theme="light"] .glass-strong::after,
+  [data-theme="light"] .glass-subtle::after,
+  [data-theme="light"] .liquid-glass::after {
+    background: radial-gradient(
+      ellipse 80% 60% at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(255,255,255,1)    0%,
+      rgba(255,255,255,0.55) 30%,
+      rgba(255,255,255,0)    60%
+    );
+  }
+
+  /* ── Panel variants ─────────────────────────────────────────────────────── */
   .glass {
     background: var(--glass);
-    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(200%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(200%);
+    border: none;
     border-radius: 20px;
-    box-shadow: var(--glass-shadow), var(--glass-inner), var(--glass-glow);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.16);
+    position: relative;
   }
 
   .glass-strong {
     background: var(--glass-strong);
-    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    border: 1px solid var(--glass-border-strong);
+    backdrop-filter: blur(var(--glass-blur)) saturate(220%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(220%);
+    border: none;
     border-radius: 20px;
-    box-shadow: var(--glass-shadow), var(--glass-inner), var(--glass-glow);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.22);
+    position: relative;
   }
 
+  /* glass-subtle: no backdrop-filter so it doesn't re-blur the already
+     blurred panel beneath it — just a very thin fill */
   .glass-subtle {
     background: var(--surface-raised);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid var(--glass-border);
+    border: none;
     border-radius: 14px;
+    position: relative;
   }
 
   .glass-hover {
-    transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease;
   }
   .glass-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--glass-inner), var(--glass-glow);
-    border-color: var(--glass-border-strong);
+    transform: translateY(-2px) scale(1.005);
+    box-shadow: 0 20px 56px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.22);
   }
 
   .section-label {
@@ -187,3 +311,15 @@ h1, h2, h3, h4, h5, h6 {
 .quiz-swipe-right { animation: quiz-swipe-right 0.3s ease-in forwards; }
 .quiz-swipe-left  { animation: quiz-swipe-left 0.3s ease-in forwards; }
 .quiz-shake       { animation: quiz-shake 0.4s ease-in-out; }
+
+/* Liquid tab-content transition */
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+@keyframes tab-exit {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-4px) scale(0.99); }
+}
+.tab-enter { animation: tab-enter 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.tab-exit  { animation: tab-exit  0.16s ease-in both; }

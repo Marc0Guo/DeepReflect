@@ -17,13 +17,16 @@ function toFlowNodes(graphNodes: GraphNode[]): Node[] {
     position: { x: (i % cols) * 200 + Math.random() * 50, y: Math.floor(i / cols) * 180 + Math.random() * 50 },
     data: { label: n.label, askCount: n.ask_count, weakScore: n.weak_score, category: n.category },
     style: {
-      background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.65)',
-      backdropFilter: 'blur(20px)',
-      border: `1.5px solid ${n.weak_score >= 0.4 ? (dark ? '#ff375f' : '#ff2d55') : (CAT_COLORS[n.category] ?? 'rgba(255,255,255,0.15)')}`,
+      background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.30)',
+      backdropFilter: 'blur(16px) saturate(200%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(200%)',
+      border: `1px solid ${n.weak_score >= 0.4
+        ? (dark ? 'rgba(255,55,95,0.7)' : 'rgba(255,45,85,0.6)')
+        : (CAT_COLORS[n.category] ?? 'rgba(255,255,255,0.20)')}`,
       borderRadius: 14, color: dark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)',
       fontSize: 12, fontFamily: 'Outfit, system-ui', fontWeight: n.ask_count > 3 ? 700 : 500,
       padding: '8px 14px', minWidth: 90,
-      boxShadow: dark ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,0,0,0.08)',
+      boxShadow: dark ? '0 2px 12px rgba(0,0,0,0.25)' : '0 2px 12px rgba(0,0,0,0.06)',
     },
   }))
 }
@@ -60,8 +63,8 @@ export function GraphView({ data, onNodeClick }: Props) {
   return (
     <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onNodeClick={handleNodeClick} fitView style={{ background: 'transparent' }}>
       <Background color={dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'} gap={40} size={1} />
-      <Controls style={{ background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--glass-border)', borderRadius: 12, overflow: 'hidden' }} />
-      <MiniMap style={{ background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--glass-border)', borderRadius: 12 }} nodeColor={(n) => CAT_COLORS[(n.data as { category: string }).category] ?? '#98989d'} maskColor={dark ? 'rgba(10,22,40,0.7)' : 'rgba(223,233,243,0.6)'} />
+      <Controls style={{ background: 'var(--glass)', backdropFilter: 'blur(16px) saturate(200%)', WebkitBackdropFilter: 'blur(16px) saturate(200%)', borderRadius: 12, overflow: 'hidden' }} />
+      <MiniMap style={{ background: 'var(--glass)', backdropFilter: 'blur(16px) saturate(200%)', WebkitBackdropFilter: 'blur(16px) saturate(200%)', borderRadius: 12 }} nodeColor={(n) => CAT_COLORS[(n.data as { category: string }).category] ?? '#98989d'} maskColor={dark ? 'rgba(8,18,30,0.65)' : 'rgba(205,220,239,0.55)'} />
     </ReactFlow>
   )
 }

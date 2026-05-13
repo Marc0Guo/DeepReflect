@@ -11,18 +11,20 @@ from deepreflect.memory.models import (
     ConceptMention,
     ConversationTurn,
     Flashcard,
+    GeneratedContent,
 )
 
-_engine = None
+_engines: dict[str, object] = {}
 
 
 def get_engine(db_path: Path):
-    global _engine
-    if _engine is None:
+    key = str(db_path)
+    if key not in _engines:
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        _engine = create_engine(f"sqlite:///{db_path}", echo=False)
-        SQLModel.metadata.create_all(_engine)
-    return _engine
+        engine = create_engine(f"sqlite:///{db_path}", echo=False)
+        SQLModel.metadata.create_all(engine)
+        _engines[key] = engine
+    return _engines[key]
 
 
 def get_session(db_path: Path):
@@ -88,7 +90,7 @@ def get_unanalyzed_turns(session: Session) -> list[ConversationTurn]:
 def get_or_create_concept(session: Session, name: str, category: str = "") -> Concept:
     concept = session.exec(select(Concept).where(Concept.name == name)).first()
     if not concept:
-        concept = Concept(name=name, category=category, first_seen=datetime.utcnow())
+        concept = Concept(name=name, category=category, first_seen=datetime.now(timezone.utc))
         session.add(concept)
         session.commit()
         session.refresh(concept)
@@ -177,7 +179,7 @@ def get_stats(session: Session) -> dict:
     total_concepts = session.exec(select(func.count(Concept.id))).one()
     total_flashcards = session.exec(select(func.count(Flashcard.id))).one()
 
-    week_ago = datetime.utcnow() - timedelta(days=7)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
     weekly_turns = session.exec(
         select(func.count(ConversationTurn.id)).where(
             ConversationTurn.timestamp >= week_ago
@@ -196,3 +198,33 @@ def get_stats(session: Session) -> dict:
         "weekly_turns": weekly_turns,
         "sources": {src: cnt for src, cnt in sources},
     }
+
+
+# --- Generated content history ---
+
+def save_generated_content(
+    session: Session,
+    content_type: str,
+    content: str,
+    period: str = "",
+    title: str = "",
+) -> GeneratedContent:
+    item = GeneratedContent(content_type=content_type, content=content, period=period, title=title)
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+def get_content_history(
+    session: Session,
+    content_type: str,
+    limit: int = 50,
+) -> list[GeneratedContent]:
+    stmt = (
+        select(GeneratedContent)
+        .where(GeneratedContent.content_type == content_type)
+        .order_by(GeneratedContent.created_at.desc())
+        .limit(limit)
+    )
+    return list(session.exec(stmt))

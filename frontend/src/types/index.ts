@@ -54,6 +54,28 @@ export interface Flashcard {
 
 export type Period = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
+export interface Settings {
+  llm_provider: string
+  llm_api_key_masked: string
+  llm_api_key_set: boolean
+  llm_model: string
+  llm_base_url: string
+  intervention_tone: string
+  repeat_threshold: number
+  port: number
+  data_dir: string
+}
+
+export interface HistoryItem {
+  id: number
+  content_type: 'quiz' | 'study_guide'
+  title: string
+  period: string
+  created_at: string
+  questions?: QuizQuestion[]
+  content?: string
+}
+
 export interface QuizChoice {
   text: string
   is_correct: boolean

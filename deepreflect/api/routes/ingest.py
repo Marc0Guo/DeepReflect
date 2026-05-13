@@ -7,13 +7,14 @@ from pydantic import BaseModel
 
 from deepreflect.config import load_config
 from deepreflect.importers.claude_code import ClaudeCodeImporter
+from deepreflect.importers.cursor import CursorImporter
 from deepreflect.importers.json_importer import JsonImporter
 from deepreflect.importers.markdown_importer import MarkdownImporter
 from deepreflect.memory.db import get_session, upsert_turn
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
-_IMPORTERS = [ClaudeCodeImporter(), MarkdownImporter(), JsonImporter()]
+_IMPORTERS = [ClaudeCodeImporter(), CursorImporter(), MarkdownImporter(), JsonImporter()]
 
 
 class IngestRequest(BaseModel):
@@ -32,6 +33,8 @@ async def ingest(req: IngestRequest):
             turns = importer.import_session(req.session_id)
         else:
             turns = importer.import_all_projects()
+    elif req.source == "cursor" and req.path is None:
+        turns = CursorImporter().import_all()
     elif req.path:
         path = Path(req.path)
         if not path.exists():
@@ -47,7 +50,7 @@ async def ingest(req: IngestRequest):
         saved = 0
         for turn in turns:
             result = upsert_turn(session, turn)
-            if result.id and not turn.id:
+            if result is turn:
                 saved += 1
 
     return {"imported": len(turns), "new": saved, "source": req.source}
@@ -59,10 +62,24 @@ async def ingest_all_claude():
     importer = ClaudeCodeImporter()
     turns = importer.import_all_projects()
     with get_session(cfg.db_path) as session:
-        saved = sum(1 for t in turns if not upsert_turn(session, t).id == t.id)
-    return {"imported": len(turns), "source": "claude-code"}
+        saved = sum(1 for t in turns if upsert_turn(session, t) is t)
+    return {"imported": len(turns), "new": saved, "source": "claude-code"}
+
+
+@router.post("/cursor/all")
+async def ingest_all_cursor():
+    cfg = load_config()
+    turns = CursorImporter().import_all()
+    with get_session(cfg.db_path) as session:
+        saved = sum(1 for t in turns if upsert_turn(session, t) is t)
+    return {"imported": len(turns), "new": saved, "source": "cursor"}
 
 
 @router.get("/projects")
 async def list_claude_projects():
     return {"projects": ClaudeCodeImporter().list_projects()}
+
+
+@router.get("/cursor/workspaces")
+async def list_cursor_workspaces():
+    return {"workspaces": CursorImporter().list_workspaces()}

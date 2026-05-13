@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from deepreflect.api.routes import analyze, flashcards, graph, ingest, summary
+from deepreflect.api.routes import analyze, flashcards, graph, ingest, settings, summary
 from deepreflect.config import ensure_dirs, load_config
 
 _FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
@@ -35,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(graph.router, prefix="/api")
     app.include_router(summary.router, prefix="/api")
     app.include_router(flashcards.router, prefix="/api")
+    app.include_router(settings.router, prefix="/api")
 
     # Serve compiled React build if it exists
     if _FRONTEND_DIST.exists():

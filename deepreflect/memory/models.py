@@ -55,3 +55,12 @@ class Flashcard(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     review_count: int = 0
     last_reviewed: Optional[datetime] = None
+
+
+class GeneratedContent(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    content_type: str  # "quiz" | "study_guide"
+    content: str  # JSON string for quiz, markdown text for study_guide
+    period: str = ""  # e.g. "this week" for study guides
+    title: str = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)

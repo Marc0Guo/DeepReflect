@@ -127,6 +127,9 @@ def import_cmd(
     if all_projects or (source == "claude-code" and path is None):
         importer = ClaudeCodeImporter()
         turns = importer.import_all_projects()
+    elif source == "cursor" and path is None:
+        from deepreflect.importers.cursor import CursorImporter
+        turns = CursorImporter().import_all()
     elif path:
         p = Path(path)
         importers = [ClaudeCodeImporter(), MarkdownImporter(), JsonImporter()]

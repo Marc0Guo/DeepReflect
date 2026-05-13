@@ -29,6 +29,15 @@ export const api = {
   analyze: (limit = 50) => post<{ processed: number; errors: number }>(`/analyze?limit=${limit}`),
   ingestAll: () => post('/ingest/claude-code/all'),
   listProjects: () => get<{ projects: string[] }>('/ingest/projects'),
+  ingestCursor: () => post('/ingest/cursor/all'),
+  listCursorWorkspaces: () => get<{ workspaces: string[] }>('/ingest/cursor/workspaces'),
+  getSettings: () => get<import('../types').Settings>('/settings'),
+  saveSettings: (body: Partial<import('../types').Settings> & { llm_api_key?: string }) =>
+    post('/settings', body),
+  quizHistory: (limit = 50) =>
+    get<import('../types').HistoryItem[]>(`/study/history?content_type=quiz&limit=${limit}`),
+  guideHistory: (limit = 50) =>
+    get<import('../types').HistoryItem[]>(`/study/history?content_type=study_guide&limit=${limit}`),
   generateSummary: (period: import('../types').Period) =>
     `${BASE}/summary/generate/${period}`,
 }
