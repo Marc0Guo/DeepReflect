@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react'
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('dr-theme') as 'light' | 'dark') || 'dark'
+      return (localStorage.getItem('dr-theme') as 'light' | 'dark') || 'light'
     }
-    return 'dark'
+    return 'light'
   })
 
   useEffect(() => {

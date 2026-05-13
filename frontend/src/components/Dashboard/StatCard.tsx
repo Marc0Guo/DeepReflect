@@ -8,11 +8,15 @@ interface Props {
   icon?: React.ReactNode
 }
 
-function useCountUp(target: number, duration = 800) {
-  const [current, setCurrent] = useState(0)
-  const ref = useRef<number>(0)
+function useCountUp(target: number, enabled: boolean, duration = 800) {
+  const [current, setCurrent] = useState(target)
+  const ref = useRef(target)
   useEffect(() => {
-    if (typeof target !== 'number') return
+    if (!enabled) {
+      ref.current = target
+      setCurrent(target)
+      return
+    }
     const start = ref.current
     const diff = target - start
     const startTime = performance.now()
@@ -25,13 +29,14 @@ function useCountUp(target: number, duration = 800) {
       if (progress < 1) requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)
-  }, [target, duration])
+  }, [target, duration, enabled])
   return current
 }
 
 export function StatCard({ label, value, sub, accentVar = '--accent', icon }: Props) {
   const numericValue = typeof value === 'number' ? value : null
-  const displayValue = numericValue !== null ? useCountUp(numericValue) : value
+  const count = useCountUp(numericValue ?? 0, numericValue !== null)
+  const displayValue = numericValue !== null ? count : value
 
   return (
     <div className="glass glass-hover p-5 relative overflow-hidden cursor-default">

@@ -71,10 +71,10 @@ export function Sidebar() {
               top: pill.top,
               height: pill.height,
               borderRadius: 14,
-              background: 'rgba(255,255,255,0.07)',
+              background: 'var(--chrome-pill)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
+              boxShadow: 'var(--chrome-pill-highlight)',
               transition: 'top 0.42s cubic-bezier(0.34,1.56,0.64,1), height 0.3s ease',
             }}
           />
@@ -112,7 +112,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto px-3 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="mt-auto px-3 pt-4" style={{ borderTop: '1px solid var(--divider-subtle)' }}>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--accent-green)' }} />
           <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>Local agent active</span>

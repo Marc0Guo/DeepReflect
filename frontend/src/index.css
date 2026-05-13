@@ -8,41 +8,7 @@
    ═══════════════════════════════════════════════════════ */
 
 :root {
-  /* Zero fill — shape comes from the gradient rim, depth from blur */
-  --glass: rgba(255,255,255,0);
-  --glass-strong: rgba(255,255,255,0);
-  --glass-border: rgba(255,255,255,0.18);
-  --glass-border-strong: rgba(255,255,255,0.28);
-  --glass-blur: 18px;
-  --glass-inner: inset 0 1px 0 rgba(255,255,255,0.18);
-  --glass-shadow: 0 2px 16px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06);
-  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.08);
-
-  --text-primary: rgba(255,255,255,0.95);
-  --text-secondary: rgba(255,255,255,0.65);
-  --text-muted: rgba(255,255,255,0.40);
-  --text-faint: rgba(255,255,255,0.22);
-
-  --accent: #64d2ff;
-  --accent-secondary: #bf5af2;
-  --accent-warm: #ff9f0a;
-  --accent-green: #30d158;
-  --accent-pink: #ff375f;
-
-  /* Micro fills: just enough to make interactive elements visible */
-  --surface-raised: rgba(255,255,255,0.05);
-  --surface-overlay: rgba(0,0,0,0.10);
-
-  /* Rich mesh so colours bleed through transparent glass */
-  --mesh-1: #070f1a;
-  --mesh-2: #090e28;
-  --mesh-3: #0d1228;
-  --mesh-spot-1: rgba(100,210,255,0.32);
-  --mesh-spot-2: rgba(191,90,242,0.26);
-  --mesh-spot-3: rgba(48,209,88,0.14);
-}
-
-[data-theme="light"] {
+  /* Default = light theme */
   --glass: rgba(255,255,255,0.12);
   --glass-strong: rgba(255,255,255,0.20);
   --glass-border: rgba(255,255,255,0.60);
@@ -66,16 +32,82 @@
   --surface-raised: rgba(255,255,255,0.14);
   --surface-overlay: rgba(255,255,255,0.10);
 
-  --mesh-1: #cddcef;
-  --mesh-2: #d9cfeb;
-  --mesh-3: #c8ddf2;
-  --mesh-spot-1: rgba(0,122,255,0.20);
-  --mesh-spot-2: rgba(175,82,222,0.18);
-  --mesh-spot-3: rgba(52,199,89,0.10);
+  --divider-subtle: rgba(0,0,0,0.08);
+  --chrome-rail: rgba(0,0,0,0.05);
+  --chrome-pill: rgba(0,0,0,0.08);
+  --chrome-pill-highlight: inset 0 1px 0 rgba(255,255,255,0.9);
+
+  /* Light mesh: same layout as dark — 145° tri-tone base + 3 spots — inverted luminance */
+  --mesh-base: #e6eaf3;
+  --mesh-1: #dde5f2;
+  --mesh-2: #d9ddf1;
+  --mesh-3: #d7e3f6;
+  /* Spots share hues with dark mode (cyan / purple / green), tuned for bright base */
+  --mesh-spot-1: rgba(100, 210, 255, 0.26);
+  --mesh-spot-2: rgba(191, 90, 242, 0.21);
+  --mesh-spot-3: rgba(48, 209, 88, 0.12);
+}
+
+[data-theme="dark"] {
+  --glass: rgba(255,255,255,0);
+  --glass-strong: rgba(255,255,255,0);
+  --glass-border: rgba(255,255,255,0.18);
+  --glass-border-strong: rgba(255,255,255,0.28);
+  --glass-blur: 18px;
+  --glass-inner: inset 0 1px 0 rgba(255,255,255,0.18);
+  --glass-shadow: 0 2px 16px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06);
+  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.08);
+
+  --text-primary: rgba(255,255,255,0.95);
+  --text-secondary: rgba(255,255,255,0.65);
+  --text-muted: rgba(255,255,255,0.40);
+  --text-faint: rgba(255,255,255,0.22);
+
+  --accent: #64d2ff;
+  --accent-secondary: #bf5af2;
+  --accent-warm: #ff9f0a;
+  --accent-green: #30d158;
+  --accent-pink: #ff375f;
+
+  --surface-raised: rgba(255,255,255,0.05);
+  --surface-overlay: rgba(0,0,0,0.10);
+
+  --divider-subtle: rgba(255,255,255,0.10);
+  --chrome-rail: rgba(255,255,255,0.04);
+  --chrome-pill: rgba(255,255,255,0.09);
+  --chrome-pill-highlight: inset 0 1px 0 rgba(255,255,255,0.18);
+
+  --mesh-1: #070f1a;
+  --mesh-2: #090e28;
+  --mesh-3: #0d1228;
+  --mesh-base: #050810;
+  /* Same hue family as light spots, higher alpha on dark ground */
+  --mesh-spot-1: rgba(100, 210, 255, 0.32);
+  --mesh-spot-2: rgba(191, 90, 242, 0.26);
+  --mesh-spot-3: rgba(48, 209, 88, 0.14);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Keyboard focus — clearer than default without changing mouse click look */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+}
+button:focus:not(:focus-visible) {
+  outline: none;
+}
 
 body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
@@ -83,6 +115,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-primary);
   overflow: hidden;
+  background: var(--mesh-base);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -91,37 +124,45 @@ h1, h2, h3, h4, h5, h6 {
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
-[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-/* Animated gradient mesh background */
+/* Mesh background — identical structure in light & dark; tokens define the palette */
 .mesh-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background:
+  background-color: var(--mesh-base);
+  background-image:
     radial-gradient(ellipse 80% 60% at 15% 20%, var(--mesh-spot-1), transparent),
     radial-gradient(ellipse 70% 50% at 85% 30%, var(--mesh-spot-2), transparent),
     radial-gradient(ellipse 60% 70% at 50% 90%, var(--mesh-spot-3), transparent),
     linear-gradient(145deg, var(--mesh-1), var(--mesh-2), var(--mesh-3));
-  transition: background 0.5s ease;
+  transition: background-color 0.55s ease, background-image 0.55s ease;
 }
 
 @layer components {
 
   /* ── Standalone .liquid-glass (Apple ultra-thin spec) ─────────────────── */
+  /* Light: avoid luminosity blend — it grays out bright backdrops */
   .liquid-glass {
-    background: rgba(255, 255, 255, 0.01);
-    background-blend-mode: luminosity;
+    background: rgba(255, 255, 255, 0.52);
+    background-blend-mode: normal;
     backdrop-filter: blur(40px) saturate(180%);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     border: none;
     border-radius: 20px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
     position: relative;
     overflow: hidden;
+  }
+
+  [data-theme="dark"] .liquid-glass {
+    background: rgba(255, 255, 255, 0.01);
+    background-blend-mode: luminosity;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
   }
 
   /* ── Static rim — shared by all glass variants ────────────────────────────
@@ -138,12 +179,12 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1px;
     background: linear-gradient(
       170deg,
-      rgba(255,255,255,0.55) 0%,
-      rgba(255,255,255,0.20) 18%,
-      rgba(255,255,255,0.04) 40%,
-      rgba(255,255,255,0)    55%,
-      rgba(255,255,255,0.04) 72%,
-      rgba(255,255,255,0.18) 100%
+      rgba(255,255,255,1)    0%,
+      rgba(255,255,255,0.55) 18%,
+      rgba(255,255,255,0.10) 40%,
+      rgba(255,255,255,0.06) 55%,
+      rgba(255,255,255,0.18) 78%,
+      rgba(255,255,255,0.65) 100%
     );
     -webkit-mask:
       linear-gradient(#fff 0 0) content-box,
@@ -154,19 +195,19 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 1;
   }
 
-  /* Light mode static rim — bright, clean */
-  [data-theme="light"] .liquid-glass::before,
-  [data-theme="light"] .glass::before,
-  [data-theme="light"] .glass-strong::before,
-  [data-theme="light"] .glass-subtle::before {
+  /* Dark mode — subtler rim on deep background */
+  [data-theme="dark"] .liquid-glass::before,
+  [data-theme="dark"] .glass::before,
+  [data-theme="dark"] .glass-strong::before,
+  [data-theme="dark"] .glass-subtle::before {
     background: linear-gradient(
       170deg,
-      rgba(255,255,255,1)    0%,
-      rgba(255,255,255,0.55) 18%,
-      rgba(255,255,255,0.10) 40%,
-      rgba(255,255,255,0.06) 55%,
-      rgba(255,255,255,0.18) 78%,
-      rgba(255,255,255,0.65) 100%
+      rgba(255,255,255,0.55) 0%,
+      rgba(255,255,255,0.20) 18%,
+      rgba(255,255,255,0.04) 40%,
+      rgba(255,255,255,0)    55%,
+      rgba(255,255,255,0.04) 72%,
+      rgba(255,255,255,0.18) 100%
     );
   }
 
@@ -189,9 +230,9 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1px;
     background: radial-gradient(
       ellipse 80% 60% at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      rgba(255,255,255,0.90) 0%,
-      rgba(255,255,255,0.30) 35%,
-      rgba(255,255,255,0)    65%
+      rgba(255,255,255,1)    0%,
+      rgba(255,255,255,0.55) 30%,
+      rgba(255,255,255,0)    60%
     );
     -webkit-mask:
       linear-gradient(#fff 0 0) content-box,
@@ -214,16 +255,16 @@ h1, h2, h3, h4, h5, h6 {
     transition: opacity 0.08s ease;
   }
 
-  /* Light mode spotlight */
-  [data-theme="light"] .glass::after,
-  [data-theme="light"] .glass-strong::after,
-  [data-theme="light"] .glass-subtle::after,
-  [data-theme="light"] .liquid-glass::after {
+  /* Dark mode spotlight */
+  [data-theme="dark"] .glass::after,
+  [data-theme="dark"] .glass-strong::after,
+  [data-theme="dark"] .glass-subtle::after,
+  [data-theme="dark"] .liquid-glass::after {
     background: radial-gradient(
       ellipse 80% 60% at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      rgba(255,255,255,1)    0%,
-      rgba(255,255,255,0.55) 30%,
-      rgba(255,255,255,0)    60%
+      rgba(255,255,255,0.90) 0%,
+      rgba(255,255,255,0.30) 35%,
+      rgba(255,255,255,0)    65%
     );
   }
 
@@ -263,6 +304,10 @@ h1, h2, h3, h4, h5, h6 {
   }
   .glass-hover:hover {
     transform: translateY(-2px) scale(1.005);
+    box-shadow: 0 20px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.85);
+  }
+
+  [data-theme="dark"] .glass-hover:hover {
     box-shadow: 0 20px 56px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.22);
   }
 

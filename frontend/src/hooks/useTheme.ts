@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 
 export function useTheme() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window === 'undefined') return 'dark'
-    return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'dark'
+    if (typeof window === 'undefined') return 'light'
+    return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light'
   })
 
   useEffect(() => {
