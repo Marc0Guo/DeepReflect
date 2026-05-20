@@ -47,9 +47,9 @@ export const api = {
   studyGuide: (period = 'this week') => get<{ guide: string }>(`/study/guide?period=${period}`),
   quiz: () => get<{ questions: import('../types').QuizQuestion[] }>('/study/quiz'),
   analyze: (limit = 50) => post<{ processed: number; errors: number }>(`/analyze?limit=${limit}`),
-  ingestAll: () => post('/ingest/claude-code/all'),
+  ingestAll: () => post<import('../types').IngestResult>('/ingest/claude-code/all'),
   listProjects: () => get<{ projects: string[] }>('/ingest/projects'),
-  ingestCursor: () => post('/ingest/cursor/all'),
+  ingestCursor: () => post<import('../types').IngestResult>('/ingest/cursor/all'),
   listCursorWorkspaces: () => get<{ workspaces: string[] }>('/ingest/cursor/workspaces'),
   getSettings: () => get<import('../types').Settings>('/settings'),
   saveSettings: (body: Partial<import('../types').Settings> & { llm_api_key?: string }) =>

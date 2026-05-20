@@ -146,8 +146,7 @@ def import_cmd(
     with get_session(cfg.db_path) as session:
         saved = 0
         for turn in turns:
-            existing = upsert_turn(session, turn)
-            if existing.id and turn.id != existing.id:
+            if upsert_turn(session, turn) is turn:
                 saved += 1
 
     console.print(f"[green]Imported {len(turns)} turns ({saved} new)[/green]")

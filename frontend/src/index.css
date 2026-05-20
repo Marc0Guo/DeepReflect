@@ -336,6 +336,19 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-muted);
   }
 
+  /* Sidebar — transparent rail, no glass panel */
+  .sidebar-rail {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    margin: 12px 0;
+  }
+
+  .sidebar-rail::before,
+  .sidebar-rail::after {
+    display: none;
+  }
+
   /* Dashboard filter bar — unified control sizing + readable contrast */
   .filter-bar-panel {
     background: var(--filter-panel-bg);

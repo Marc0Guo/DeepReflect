@@ -25,6 +25,13 @@ export function DashboardPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [ingesting, setIngesting] = useState(false)
   const [ingestingCursor, setIngestingCursor] = useState(false)
+  const [importNotice, setImportNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!importNotice) return
+    const timer = window.setTimeout(() => setImportNotice(null), 6000)
+    return () => window.clearTimeout(timer)
+  }, [importNotice])
 
   useEffect(() => {
     const timer = window.setTimeout(() => setAppliedFilters(filters), 300)
@@ -92,9 +99,17 @@ export function DashboardPage() {
           <button
             onClick={async () => {
               setIngesting(true)
+              setImportNotice(null)
               try {
-                await api.ingestAll()
-              } catch {}
+                const result = await api.ingestAll()
+                if (result.imported === 0) {
+                  setImportNotice('No Claude Code conversations found. Install Claude Code or import a file instead.')
+                } else {
+                  setImportNotice(`Imported ${result.imported} Claude turns (${result.new} new).`)
+                }
+              } catch {
+                setImportNotice('Claude import failed. Is the backend running on port 7733?')
+              }
               setIngesting(false)
               load()
             }}
@@ -120,9 +135,17 @@ export function DashboardPage() {
           <button
             onClick={async () => {
               setIngestingCursor(true)
+              setImportNotice(null)
               try {
-                await api.ingestCursor()
-              } catch {}
+                const result = await api.ingestCursor()
+                if (result.imported === 0) {
+                  setImportNotice('No Cursor conversations found in local storage.')
+                } else {
+                  setImportNotice(`Imported ${result.imported} Cursor turns (${result.new} new).`)
+                }
+              } catch {
+                setImportNotice('Cursor import failed. Is the backend running on port 7733?')
+              }
               setIngestingCursor(false)
               load()
             }}
@@ -177,6 +200,15 @@ export function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {importNotice && (
+        <div
+          className="glass-subtle px-4 py-3 text-sm animate-fade-in-up"
+          style={{ color: 'var(--text-secondary)', borderLeft: '3px solid var(--accent)' }}
+        >
+          {importNotice}
+        </div>
+      )}
 
       <DashboardFilterBar
         filters={filters}

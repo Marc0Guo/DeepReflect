@@ -48,6 +48,12 @@ export interface Stats {
   filters_active: boolean
 }
 
+export interface IngestResult {
+  imported: number
+  new: number
+  source: string
+}
+
 export type DashboardPeriod = 'all' | 'day' | 'week' | 'month' | 'year'
 export type DashboardStatus = 'all' | 'weak' | 'solved'
 

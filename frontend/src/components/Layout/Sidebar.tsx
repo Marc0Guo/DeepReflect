@@ -42,10 +42,7 @@ export function Sidebar() {
   }, [location.pathname])
 
   return (
-    <aside
-      className="w-[220px] shrink-0 flex flex-col py-5 px-3 relative z-10 glass"
-      style={{ borderRadius: '0 20px 20px 0', borderLeft: 'none', margin: '12px 0 12px 0' }}
-    >
+    <aside className="sidebar-rail w-[220px] shrink-0 flex flex-col py-5 px-3 relative z-10">
       {/* Logo */}
       <div className="px-3 mb-8 flex items-center gap-2.5 mt-1">
         <div className="w-7 h-7 rounded-[10px] flex items-center justify-center"
@@ -71,10 +68,7 @@ export function Sidebar() {
               top: pill.top,
               height: pill.height,
               borderRadius: 14,
-              background: 'var(--chrome-pill)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: 'var(--chrome-pill-highlight)',
+              background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
               transition: 'top 0.42s cubic-bezier(0.34,1.56,0.64,1), height 0.3s ease',
             }}
           />
