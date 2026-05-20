@@ -42,7 +42,26 @@ export interface Stats {
   total_concepts: number
   total_flashcards: number
   weekly_turns: number
+  period_turns: number
   sources: Record<string, number>
+  available_sources: string[]
+  filters_active: boolean
+}
+
+export interface IngestResult {
+  imported: number
+  new: number
+  source: string
+}
+
+export type DashboardPeriod = 'all' | 'day' | 'week' | 'month' | 'year'
+export type DashboardStatus = 'all' | 'weak' | 'solved'
+
+export interface DashboardFilters {
+  period: DashboardPeriod
+  source: string
+  concept: string
+  status: DashboardStatus
 }
 
 export interface Flashcard {

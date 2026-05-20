@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { ReactFlow, Background, Controls, MiniMap, useNodesState, useEdgesState, type Node, type Edge } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { useTheme } from '../../hooks/useTheme'
 import type { GraphData, GraphNode } from '../../types'
 
 const CAT_COLORS: Record<string, string> = {
@@ -42,11 +43,18 @@ function toFlowEdges(edges: GraphData['edges']): Edge[] {
 interface Props { data: GraphData; onNodeClick?: (nodeId: string, label: string) => void }
 
 export function GraphView({ data, onNodeClick }: Props) {
-  const initialNodes = useMemo(() => toFlowNodes(data.nodes), [data.nodes])
-  const initialEdges = useMemo(() => toFlowEdges(data.edges), [data.edges])
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges)
-  const dark = isDark()
+  const { theme } = useTheme()
+  const flowNodes = useMemo(() => toFlowNodes(data.nodes), [data.nodes, theme])
+  const flowEdges = useMemo(() => toFlowEdges(data.edges), [data.edges, theme])
+  const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
+
+  useEffect(() => {
+    setNodes(flowNodes)
+    setEdges(flowEdges)
+  }, [flowNodes, flowEdges, setNodes, setEdges])
+
+  const dark = theme !== 'light'
 
   const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => { onNodeClick?.(node.id, String(node.data.label)) }, [onNodeClick])
 

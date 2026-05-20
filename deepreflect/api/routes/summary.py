@@ -1,20 +1,25 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 
 from deepreflect.agents.roast_generator import generate_roast_html
 from deepreflect.agents.summary_generator import generate_summary_html
+from deepreflect.api.dashboard_filters import dashboard_filters
 from deepreflect.config import load_config
-from deepreflect.memory.db import get_session, get_stats
+from deepreflect.memory.db import DashboardFilters, filters_are_active, get_filtered_stats, get_session, get_stats
 
 router = APIRouter(prefix="/summary", tags=["summary"])
 
 
 @router.get("/stats")
-async def stats():
+async def stats(filters: Annotated[DashboardFilters, Depends(dashboard_filters)]):
     cfg = load_config()
     with get_session(cfg.db_path) as session:
+        if filters_are_active(filters):
+            return get_filtered_stats(session, filters)
         return get_stats(session)
 
 

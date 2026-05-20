@@ -1,10 +1,20 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
 
 from deepreflect.analysis.graph import build_graph, graph_to_json
+from deepreflect.api.dashboard_filters import dashboard_filters
 from deepreflect.config import load_config
-from deepreflect.memory.db import get_concept_turns, get_session, get_concepts
+from deepreflect.memory.db import (
+    DashboardFilters,
+    filters_are_active,
+    get_concept_turns,
+    get_filtered_concepts,
+    get_session,
+    get_concepts,
+)
 
 router = APIRouter(prefix="/graph", tags=["graph"])
 
@@ -36,9 +46,17 @@ async def get_concept_history(concept_id: int, limit: int = 20):
 
 
 @router.get("/concepts")
-async def list_concepts(min_ask_count: int = 1, limit: int = 100):
+async def list_concepts(
+    filters: Annotated[DashboardFilters, Depends(dashboard_filters)],
+    min_ask_count: int = 1,
+    limit: int = 100,
+):
     cfg = load_config()
     with get_session(cfg.db_path) as session:
+        if filters_are_active(filters):
+            return get_filtered_concepts(
+                session, filters, min_ask_count=min_ask_count, limit=limit
+            )
         concepts = get_concepts(session, min_ask_count=min_ask_count, limit=limit)
         return [
             {
