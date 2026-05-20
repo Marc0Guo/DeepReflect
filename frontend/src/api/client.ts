@@ -40,7 +40,16 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  if (!res.ok) {
+    let message = `${res.status} ${res.statusText}`
+    try {
+      const err = (await res.json()) as { detail?: string }
+      if (typeof err.detail === 'string') message = err.detail
+    } catch {
+      /* ignore non-JSON error bodies */
+    }
+    throw new Error(message)
+  }
   return res.json()
 }
 
@@ -76,7 +85,11 @@ export const api = {
   conceptTurns: (id: number, limit = 20) =>
     get<import('../types').ConversationTurn[]>(`/graph/concept/${id}/turns?limit=${limit}`),
   flashcards: () => get<import('../types').Flashcard[]>('/study/flashcards'),
-  generateFlashcards: (limit = 10) => post('/study/flashcards/generate', { limit }),
+  generateFlashcards: (limit = 10, conceptId?: number) =>
+    post<{ generated: number; detail: string | null }>('/study/flashcards/generate', {
+      limit,
+      ...(conceptId != null ? { concept_id: conceptId } : {}),
+    }),
   studyGuide: (period = 'this week') => get<{ guide: string }>(`/study/guide?period=${period}`),
   quiz: () => get<{ questions: import('../types').QuizQuestion[] }>('/study/quiz'),
   analyzeBounds: () => get<import('../types').AnalyzeBounds>('/analyze/bounds'),

@@ -6,6 +6,8 @@ import json
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel, Field
+from sqlmodel import select
 
 from deepreflect.agents.study_agent import generate_flashcards, generate_quiz, generate_study_guide
 from deepreflect.analysis.llm_client import LLMClient
@@ -16,8 +18,14 @@ from deepreflect.memory.db import (
     get_session,
     save_generated_content,
 )
+from deepreflect.memory.models import Concept
 
 router = APIRouter(prefix="/study", tags=["study"])
+
+
+class GenerateFlashcardsRequest(BaseModel):
+    limit: int = Field(default=10, ge=1, le=100)
+    concept_id: int | None = None
 
 
 @router.get("/flashcards")
@@ -29,14 +37,40 @@ async def list_flashcards(concept_id: int | None = None):
 
 
 @router.post("/flashcards/generate")
-async def gen_flashcards(concept_id: int | None = None, limit: int = 10):
+async def gen_flashcards(body: GenerateFlashcardsRequest):
     cfg = load_config()
     if not cfg.llm_api_key:
         raise HTTPException(status_code=400, detail="LLM API key not configured")
     llm = LLMClient.from_config(cfg)
     with get_session(cfg.db_path) as session:
-        cards = await generate_flashcards(session, llm, limit=limit)
-        return {"generated": len(cards)}
+        concept: Concept | None = None
+        if body.concept_id is not None:
+            concept = session.exec(
+                select(Concept).where(Concept.id == body.concept_id)
+            ).first()
+            if not concept:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Concept {body.concept_id} not found",
+                )
+        cards = await generate_flashcards(
+            session, llm, concept=concept, limit=body.limit
+        )
+
+    detail: str | None = None
+    if not cards:
+        if body.concept_id is not None:
+            detail = (
+                "No conversation turns linked to this concept, "
+                "or the LLM returned no parseable cards."
+            )
+        else:
+            detail = (
+                "No conversations imported yet, "
+                "or the LLM returned no parseable cards."
+            )
+
+    return {"generated": len(cards), "detail": detail}
 
 
 @router.get("/flashcards/export")

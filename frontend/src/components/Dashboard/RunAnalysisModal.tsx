@@ -173,8 +173,8 @@ export function RunAnalysisModal({ open, onClose, onComplete }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="run-analysis-title"
-        className="glass w-full max-w-md rounded-2xl p-6 shadow-xl animate-fade-in-up flex flex-col overflow-hidden"
-        style={{ color: 'var(--text-primary)', height: '28rem' }}
+        className="glass w-full max-w-md rounded-2xl p-6 shadow-xl animate-fade-in-up flex flex-col max-h-[min(32rem,90vh)] overflow-hidden"
+        style={{ color: 'var(--text-primary)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="run-analysis-title" className="font-display text-lg font-bold tracking-tight shrink-0">
@@ -183,7 +183,8 @@ export function RunAnalysisModal({ open, onClose, onComplete }: Props) {
 
         {phase === 'confirm' && (
           <>
-            <p className="text-sm mt-3 leading-relaxed shrink-0" style={{ color: 'var(--text-muted)' }}>
+            <div className="flex-1 min-h-0 overflow-y-auto mt-3 -mr-1 pr-1">
+            <p className="text-sm leading-relaxed shrink-0" style={{ color: 'var(--text-muted)' }}>
               {EXPLAIN}
             </p>
 
@@ -340,8 +341,12 @@ export function RunAnalysisModal({ open, onClose, onComplete }: Props) {
                     (preview ? '' : 'Could not load preview. Is the backend running?')}
               </p>
             </div>
+            </div>
 
-            <div className="flex gap-2.5 justify-end mt-auto pt-6 shrink-0">
+            <div
+              className="flex gap-2.5 justify-end pt-4 mt-4 shrink-0"
+              style={{ borderTop: '1px solid var(--glass-border)' }}
+            >
               <button
                 type="button"
                 onClick={onClose}
@@ -368,42 +373,47 @@ export function RunAnalysisModal({ open, onClose, onComplete }: Props) {
 
         {(phase === 'running' || phase === 'done' || phase === 'error') && (
           <>
-            <p
-              className="text-sm mt-3 line-clamp-3 shrink-0"
-              style={{ color: 'var(--text-muted)' }}
-              title={message}
-            >
-              {message}
-            </p>
-            {phase === 'running' && (
-              <div className="mt-5 shrink-0">
-                <div
-                  className="h-2 rounded-full overflow-hidden"
-                  style={{ background: 'var(--surface-raised)' }}
-                >
-                  <div
-                    className="h-full rounded-full transition-all duration-300 ease-out"
-                    style={{
-                      width: `${progress}%`,
-                      background:
-                        'linear-gradient(90deg, var(--accent), var(--accent-secondary))',
-                    }}
-                  />
-                </div>
-                <p className="text-xs mt-2 tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                  {message} · {progress}%
-                </p>
-              </div>
-            )}
-            {phase === 'done' && result && (
-              <p className="text-sm mt-4 font-medium shrink-0" style={{ color: 'var(--accent)' }}>
-                {result.processed} analyzed
-                {result.errors > 0 ? `, ${result.errors} failed` : ''}. {result.remaining} still
-                unanalyzed.
+            <div className="flex-1 min-h-0 overflow-y-auto mt-3 -mr-1 pr-1">
+              <p
+                className="text-sm line-clamp-3 shrink-0"
+                style={{ color: 'var(--text-muted)' }}
+                title={message}
+              >
+                {message}
               </p>
-            )}
+              {phase === 'running' && (
+                <div className="mt-5 shrink-0">
+                  <div
+                    className="h-2 rounded-full overflow-hidden"
+                    style={{ background: 'var(--surface-raised)' }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all duration-300 ease-out"
+                      style={{
+                        width: `${progress}%`,
+                        background:
+                          'linear-gradient(90deg, var(--accent), var(--accent-secondary))',
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs mt-2 tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                    {message} · {progress}%
+                  </p>
+                </div>
+              )}
+              {phase === 'done' && result && (
+                <p className="text-sm mt-4 font-medium shrink-0" style={{ color: 'var(--accent)' }}>
+                  {result.processed} analyzed
+                  {result.errors > 0 ? `, ${result.errors} failed` : ''}. {result.remaining} still
+                  unanalyzed.
+                </p>
+              )}
+            </div>
             {phase !== 'running' && (
-              <div className="flex justify-end mt-auto pt-6 shrink-0">
+              <div
+                className="flex justify-end pt-4 mt-4 shrink-0"
+                style={{ borderTop: '1px solid var(--glass-border)' }}
+              >
                 <button
                   type="button"
                   onClick={onClose}

@@ -161,6 +161,7 @@ export function StudyPage() {
   const [quizLoading, setQuizLoading] = useState(false)
   const [flipped, setFlipped] = useState<Set<number>>(new Set())
   const [generating, setGenerating] = useState(false)
+  const [flashcardNotice, setFlashcardNotice] = useState<string | null>(null)
 
   const [quizHistory, setQuizHistory] = useState<HistoryItem[]>([])
   const [guideHistory, setGuideHistory] = useState<HistoryItem[]>([])
@@ -215,7 +216,22 @@ export function StudyPage() {
 
   async function generateCards() {
     setGenerating(true)
-    try { await api.generateFlashcards(15); setFlashcards(await api.flashcards()) } catch {}
+    setFlashcardNotice(null)
+    try {
+      const r = await api.generateFlashcards(15)
+      setFlashcards(await api.flashcards())
+      if (r.generated === 0) {
+        setFlashcardNotice(
+          r.detail ?? 'No flashcards were generated. Import conversations and check your LLM key in Settings.',
+        )
+      } else {
+        setFlashcardNotice(`Generated ${r.generated} flashcard${r.generated === 1 ? '' : 's'}.`)
+      }
+    } catch (e) {
+      setFlashcardNotice(
+        e instanceof Error ? e.message : 'Flashcard generation failed.',
+      )
+    }
     setGenerating(false)
   }
 
@@ -263,10 +279,15 @@ export function StudyPage() {
         {/* ── FLASHCARDS ─────────────────────────────────────────────── */}
         {displayedTab === 'flashcards' && (
           <div className="space-y-5">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-3 flex-wrap">
               <span className="text-xs" style={{ color: 'var(--text-faint)' }}>
                 {flashcards.length} cards · click to flip
               </span>
+              {flashcardNotice && (
+                <span className="text-xs flex-1 min-w-[200px]" style={{ color: 'var(--text-muted)' }}>
+                  {flashcardNotice}
+                </span>
+              )}
               <button
                 onClick={generateCards}
                 disabled={generating}
