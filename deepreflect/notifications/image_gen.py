@@ -27,9 +27,9 @@ async def html_to_png(html_path: Path, element_selector: str = "#report-page") -
 
         page = await browser.new_page(viewport={"width": 520, "height": 900})
         try:
-            await page.goto(f"file://{html_path.resolve()}", wait_until="networkidle")
-            # Allow Google Fonts time to load; file:// pages load fast so 800 ms is safe.
-            await page.wait_for_timeout(800)
+            await page.goto(f"file://{html_path.resolve()}", wait_until="domcontentloaded")
+            # Brief pause for web fonts / layout (file:// never reaches networkidle with external fonts).
+            await page.wait_for_timeout(1200)
             element = await page.query_selector(element_selector)
             if element is None:
                 # Fallback: screenshot the whole page body

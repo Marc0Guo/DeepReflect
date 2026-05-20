@@ -318,6 +318,20 @@ def flashcards(
             console.print(f"A: {c.back}")
 
 
+# ── Notifications setup ───────────────────────────────────────────────────────
+
+
+@app.command("setup-notifications")
+def setup_notifications():
+    """Install Playwright Chromium (required for Discord/Slack roast images)."""
+    import subprocess
+    import sys
+
+    console.print("[bold]Installing Playwright Chromium…[/bold]")
+    subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+    console.print("[green]Done.[/green] Discord/Slack test notifications can now attach PNG images.")
+
+
 # ── Serve ─────────────────────────────────────────────────────────────────────
 
 

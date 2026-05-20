@@ -40,9 +40,15 @@ async def dispatch_notification(cfg: Config) -> dict[str, str]:
 
     # ── 2. Screenshot → PNG bytes ─────────────────────────────────────────────
     log.info("Notification: rendering PNG from %s…", html_path.name)
+    image_error: str | None = None
     try:
         image_bytes = await html_to_png(html_path)
     except RuntimeError as exc:
+        image_error = str(exc)
+        log.error("Image generation failed: %s", exc)
+        image_bytes = None
+    except Exception as exc:
+        image_error = str(exc)
         log.error("Image generation failed: %s", exc)
         image_bytes = None
 
@@ -56,7 +62,7 @@ async def dispatch_notification(cfg: Config) -> dict[str, str]:
                     results[channel] = "error: webhook URL not configured"
                     continue
                 if image_bytes is None:
-                    results[channel] = "error: image generation failed"
+                    results[channel] = f"error: {image_error or 'image generation failed'}"
                     continue
                 from deepreflect.notifications.platforms import discord_platform
                 await discord_platform.send(cfg.discord_webhook_url, image_bytes)

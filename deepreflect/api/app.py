@@ -17,6 +17,26 @@ log = logging.getLogger(__name__)
 _FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
 
 
+async def _warn_if_notifications_image_deps_missing() -> None:
+    """Log once at startup if Playwright Chromium is not installed."""
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        log.warning(
+            "Notifications: playwright not installed — run: uv run deepreflect setup-notifications"
+        )
+        return
+
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            await browser.close()
+    except Exception:
+        log.warning(
+            "Notifications: Chromium not found — run: uv run deepreflect setup-notifications"
+        )
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     """Start APScheduler on startup, shut it down on exit."""
@@ -30,6 +50,7 @@ async def _lifespan(app: FastAPI):
         scheduler.start()
         app.state.scheduler = scheduler
         log.info("Scheduler started.")
+        await _warn_if_notifications_image_deps_missing()
     except ImportError:
         log.warning("apscheduler not installed — notifications disabled.")
         app.state.scheduler = None
