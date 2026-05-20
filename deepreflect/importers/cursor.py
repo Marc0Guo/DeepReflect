@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import platform
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from deepreflect.importers.base import ImporterPlugin, _extract_text
@@ -131,23 +131,70 @@ def _list_composer_ids() -> list[str]:
     return sorted(ids)
 
 
-def _ts(raw) -> datetime:
-    if raw is None:
-        return datetime.now(timezone.utc)
+def _ts(raw, *, fallback: datetime | None = None) -> datetime | None:
+    """Parse Cursor timestamps (ISO, unix ms, or numeric strings). Never invents 'now'."""
+    if raw is None or raw == "":
+        return fallback
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return fallback
+        if s.isdigit():
+            return _ts(int(s), fallback=fallback)
+        try:
+            return datetime.fromisoformat(s.replace("Z", "+00:00"))
+        except Exception:
+            return fallback
     if isinstance(raw, (int, float)):
         ts = float(raw)
-        if ts > 1e12:
+        if ts > 1e15:
+            ts /= 1_000_000.0
+        elif ts > 1e12:
             ts /= 1000.0
         try:
             return datetime.fromtimestamp(ts, tz=timezone.utc)
         except Exception:
-            return datetime.now(timezone.utc)
-    if isinstance(raw, str):
-        try:
-            return datetime.fromisoformat(raw.replace("Z", "+00:00"))
-        except Exception:
-            pass
-    return datetime.now(timezone.utc)
+            return fallback
+    return fallback
+
+
+def _interpolate_time(start: datetime, end: datetime, index: int, total: int) -> datetime:
+    if total <= 1:
+        return start
+    span_sec = (end - start).total_seconds()
+    if span_sec <= 0:
+        return start + timedelta(seconds=index)
+    return start + timedelta(seconds=span_sec * index / (total - 1))
+
+
+def _file_time_span(path: Path) -> tuple[datetime, datetime]:
+    st = path.stat()
+    end = datetime.fromtimestamp(st.st_mtime, tz=timezone.utc)
+    start_raw = getattr(st, "st_birthtime", None) or st.st_ctime
+    start = datetime.fromtimestamp(start_raw, tz=timezone.utc)
+    if start > end:
+        start = end
+    return start, end
+
+
+def _bubble_timestamp(
+    bubble: dict,
+    header: dict,
+    *,
+    start: datetime,
+    end: datetime,
+    index: int,
+    total: int,
+) -> datetime:
+    for raw in (
+        bubble.get("createdAt"),
+        bubble.get("lastUpdatedAt"),
+        header.get("lastUpdatedAt"),
+    ):
+        parsed = _ts(raw)
+        if parsed is not None:
+            return parsed
+    return _interpolate_time(start, end, index, total)
 
 
 def _extract_lexical_text(raw: str) -> str:
@@ -201,7 +248,12 @@ def _parse_composer(composer_id: str) -> list[ConversationTurn]:
 
     headers = data.get("fullConversationHeadersOnly") or []
     conv_map = data.get("conversationMap") or {}
-    default_ts = _ts(data.get("createdAt"))
+    now = datetime.now(timezone.utc)
+    start = _ts(data.get("createdAt"), fallback=now) or now
+    end = _ts(data.get("lastUpdatedAt"), fallback=start) or start
+    if end < start:
+        end = start
+    n_headers = len(headers)
     turns: list[ConversationTurn] = []
 
     pending_user: tuple[str, datetime] | None = None
@@ -227,7 +279,7 @@ def _parse_composer(composer_id: str) -> list[ConversationTurn]:
         pending_user = None
         pending_ai = []
 
-    for header in headers:
+    for idx, header in enumerate(headers):
         bubble_id = header.get("bubbleId") or header.get("id")
         bubble_type = header.get("type")
         if not bubble_id:
@@ -245,11 +297,13 @@ def _parse_composer(composer_id: str) -> list[ConversationTurn]:
                 bubble = {}
 
         text = _extract_bubble_text(bubble)
-        ts = _ts(
-            bubble.get("createdAt")
-            or bubble.get("lastUpdatedAt")
-            or header.get("lastUpdatedAt")
-            or default_ts
+        ts = _bubble_timestamp(
+            bubble,
+            header,
+            start=start,
+            end=end,
+            index=idx,
+            total=n_headers,
         )
         role_type = bubble_type if bubble_type in (_BUBBLE_USER, _BUBBLE_ASSISTANT) else bubble.get("type")
 
@@ -273,10 +327,42 @@ def _parse_agent_transcript(path: Path) -> list[ConversationTurn]:
         return []
 
     session_id = path.stem
+    events: list[tuple[str, str, object]] = []
+
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except Exception:
+                continue
+
+            role = str(entry.get("role") or entry.get("type") or "").lower()
+            content = entry.get("message", {}).get("content", entry.get("content", ""))
+            text = _extract_text(content)
+            if not text:
+                continue
+            events.append((role, text, entry.get("timestamp") or entry.get("createdAt")))
+    except Exception:
+        return []
+
+    if not events:
+        return []
+
+    span_start, span_end = _file_time_span(path)
+    user_indices = [i for i, (role, _, _) in enumerate(events) if role in ("user", "human")]
+    user_times: dict[int, datetime] = {}
+    for j, evt_idx in enumerate(user_indices):
+        explicit = _ts(events[evt_idx][2])
+        user_times[evt_idx] = explicit or _interpolate_time(
+            span_start, span_end, j, len(user_indices)
+        )
+
     turns: list[ConversationTurn] = []
     pending_user: tuple[str, datetime] | None = None
     pending_ai: list[str] = []
-    line_no = 0
 
     def flush() -> None:
         nonlocal pending_user, pending_ai
@@ -297,35 +383,13 @@ def _parse_agent_transcript(path: Path) -> list[ConversationTurn]:
         pending_user = None
         pending_ai = []
 
-    try:
-        for line in path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            line_no += 1
-            try:
-                entry = json.loads(line)
-            except Exception:
-                continue
-
-            role = str(entry.get("role") or entry.get("type") or "").lower()
-            content = entry.get("message", {}).get("content", entry.get("content", ""))
-            text = _extract_text(content)
-            if not text:
-                continue
-
-            ts = _ts(entry.get("timestamp") or entry.get("createdAt"))
-            if not entry.get("timestamp") and not entry.get("createdAt"):
-                ts = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
-
-            if role in ("user", "human"):
-                flush()
-                pending_user = (text, ts)
-            elif role in ("assistant", "ai", "bot"):
-                if pending_user:
-                    pending_ai.append(text)
-    except Exception:
-        return turns
+    for i, (role, text, _) in enumerate(events):
+        if role in ("user", "human"):
+            flush()
+            pending_user = (text, user_times[i])
+        elif role in ("assistant", "ai", "bot"):
+            if pending_user:
+                pending_ai.append(text)
 
     flush()
     return turns
@@ -351,7 +415,7 @@ def _parse_workspace_generations(vscdb_path: Path) -> list[ConversationTurn]:
                 ConversationTurn(
                     source="cursor",
                     session_id=session_id,
-                    timestamp=_ts(gen.get("unixMs")),
+                    timestamp=_ts(gen.get("unixMs"), fallback=datetime.now(timezone.utc)),
                     user_prompt=text,
                     ai_response="",
                     extra=json.dumps({"generation_uuid": gen.get("generationUUID", "")}),
@@ -387,6 +451,13 @@ class CursorImporter(ImporterPlugin):
         return []
 
     def import_all(self) -> list[ConversationTurn]:
+        for _event in self.iter_import_all():
+            pass
+        return getattr(self, "_parsed_turns", [])
+
+    def iter_import_all(self):
+        """Yield progress dicts; parsed turns are on ``self._parsed_turns`` after completion."""
+
         turns: list[ConversationTurn] = []
         seen: set[tuple[str, str, str]] = set()
 
@@ -402,21 +473,62 @@ class CursorImporter(ImporterPlugin):
                 seen.add(key)
                 turns.append(turn)
 
-        for composer_id in _list_composer_ids():
-            add(_parse_composer(composer_id))
+        yield {"stage": "discover", "progress": 2, "message": "Scanning Cursor local storage…"}
 
+        composer_ids = _list_composer_ids()
+        transcripts: list[Path] = []
         projects_root = _cursor_projects_root()
         if projects_root.exists():
-            for transcript in projects_root.rglob("agent-transcripts/*/*.jsonl"):
-                add(_parse_agent_transcript(transcript))
+            transcripts = list(projects_root.rglob("agent-transcripts/*/*.jsonl"))
 
-        # Last-resort fallback for workspaces without global bubble data
+        vscdbs: list[Path] = []
         root = _cursor_storage_root()
         if root and root.exists():
-            for vscdb in root.rglob("state.vscdb"):
-                add(_parse_workspace_generations(vscdb))
+            vscdbs = list(root.rglob("state.vscdb"))
 
-        return turns
+        yield {
+            "stage": "discover",
+            "progress": 5,
+            "message": (
+                f"Found {len(composer_ids)} composer chats and "
+                f"{len(transcripts)} agent transcripts…"
+            ),
+        }
+
+        steps: list[tuple[str, Path | str]] = []
+        for composer_id in composer_ids:
+            steps.append(("composer", composer_id))
+        for transcript in transcripts:
+            steps.append(("transcript", transcript))
+        for vscdb in vscdbs:
+            steps.append(("workspace", vscdb))
+
+        labels = {
+            "composer": "composer chats",
+            "transcript": "agent transcripts",
+            "workspace": "workspace logs",
+        }
+        total = max(len(steps), 1)
+        for i, (kind, target) in enumerate(steps):
+            if kind == "composer":
+                add(_parse_composer(str(target)))
+            elif kind == "transcript":
+                add(_parse_agent_transcript(target))  # type: ignore[arg-type]
+            else:
+                add(_parse_workspace_generations(target))  # type: ignore[arg-type]
+
+            yield {
+                "stage": "import",
+                "progress": 5 + int(73 * (i + 1) / total),
+                "message": f"Reading {labels[kind]} ({i + 1}/{total})…",
+            }
+
+        self._parsed_turns = turns
+        yield {
+            "stage": "parsed",
+            "progress": 78,
+            "message": f"Parsed {len(turns)} exchanges",
+        }
 
     def list_workspaces(self) -> list[str]:
         root = _cursor_storage_root()

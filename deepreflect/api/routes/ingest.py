@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from deepreflect.config import load_config
@@ -10,7 +12,7 @@ from deepreflect.importers.claude_code import ClaudeCodeImporter
 from deepreflect.importers.cursor import CursorImporter
 from deepreflect.importers.json_importer import JsonImporter
 from deepreflect.importers.markdown_importer import MarkdownImporter
-from deepreflect.memory.db import get_session, upsert_turn
+from deepreflect.memory.db import clear_memory, get_session, upsert_turn
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -73,6 +75,59 @@ async def ingest_all_cursor():
     with get_session(cfg.db_path) as session:
         saved = sum(1 for t in turns if upsert_turn(session, t) is t)
     return {"imported": len(turns), "new": saved, "source": "cursor"}
+
+
+@router.post("/cursor/all/stream")
+async def ingest_all_cursor_stream():
+    cfg = load_config()
+
+    def event_stream():
+        importer = CursorImporter()
+        turns: list = []
+
+        for event in importer.iter_import_all():
+            if event.get("stage") == "parsed":
+                turns = importer._parsed_turns
+                event = {
+                    **event,
+                    "message": f"Saving {len(turns)} exchanges to memory…",
+                }
+            yield json.dumps(event) + "\n"
+
+        saved = 0
+        total = max(len(turns), 1)
+        with get_session(cfg.db_path) as session:
+            for i, turn in enumerate(turns):
+                if upsert_turn(session, turn) is turn:
+                    saved += 1
+                if i % 50 == 0 or i == total - 1:
+                    yield json.dumps(
+                        {
+                            "stage": "saving",
+                            "progress": 78 + int(21 * (i + 1) / total),
+                            "message": f"Saving exchanges ({i + 1}/{total})…",
+                        }
+                    ) + "\n"
+
+        yield json.dumps(
+            {
+                "stage": "done",
+                "progress": 100,
+                "message": "Import complete",
+                "imported": len(turns),
+                "new": saved,
+            }
+        ) + "\n"
+
+    return StreamingResponse(event_stream(), media_type="application/x-ndjson")
+
+
+@router.post("/clear")
+async def ingest_clear():
+    cfg = load_config()
+    with get_session(cfg.db_path) as session:
+        deleted = clear_memory(session)
+    return {"cleared": deleted}
 
 
 @router.get("/projects")

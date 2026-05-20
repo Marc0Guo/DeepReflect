@@ -1,15 +1,23 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 
 from deepreflect.agents.roast_generator import generate_roast_html
 from deepreflect.agents.summary_generator import generate_summary_html
 from deepreflect.api.dashboard_filters import dashboard_filters
 from deepreflect.config import load_config
-from deepreflect.memory.db import DashboardFilters, filters_are_active, get_filtered_stats, get_session, get_stats
+from deepreflect.memory.db import (
+    DashboardFilters,
+    filters_are_active,
+    get_dashboard_analytics,
+    get_filtered_stats,
+    get_session,
+    get_stats,
+)
+from deepreflect.memory.insights import get_dashboard_insights, get_session_turns
 
 router = APIRouter(prefix="/summary", tags=["summary"])
 
@@ -21,6 +29,38 @@ async def stats(filters: Annotated[DashboardFilters, Depends(dashboard_filters)]
         if filters_are_active(filters):
             return get_filtered_stats(session, filters)
         return get_stats(session)
+
+
+@router.get("/analytics")
+async def analytics(
+    filters: Annotated[DashboardFilters, Depends(dashboard_filters)],
+):
+    """Activity timeline + topic/category distribution for the dashboard."""
+    cfg = load_config()
+    with get_session(cfg.db_path) as session:
+        return get_dashboard_analytics(session, filters)
+
+
+@router.get("/insights")
+async def insights(
+    filters: Annotated[DashboardFilters, Depends(dashboard_filters)],
+    year: Optional[int] = Query(None, description="Calendar year (full Jan–Dec)"),
+):
+    """Behavior charts: year calendar, global time heatmap, filtered word cloud."""
+    cfg = load_config()
+    with get_session(cfg.db_path) as session:
+        return get_dashboard_insights(session, filters, year=year)
+
+
+@router.get("/thread-turns")
+async def thread_turns(
+    session_id: str,
+    source: str,
+    limit: int = 40,
+):
+    cfg = load_config()
+    with get_session(cfg.db_path) as session:
+        return get_session_turns(session, session_id, source, limit=limit)
 
 
 @router.get("/generate/{period}", response_class=HTMLResponse)

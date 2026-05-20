@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { api } from '../api/client'
 import type { NotificationStatus, Settings } from '../types'
 
@@ -54,17 +55,39 @@ function ModelSelect({
 
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0 })
   const ref = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  function updateMenuPos() {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    setMenuPos({ top: rect.bottom + 6, left: rect.left, width: rect.width })
+  }
+
+  useLayoutEffect(() => {
+    if (!open) return
+    updateMenuPos()
+    window.addEventListener('resize', updateMenuPos)
+    window.addEventListener('scroll', updateMenuPos, true)
+    return () => {
+      window.removeEventListener('resize', updateMenuPos)
+      window.removeEventListener('scroll', updateMenuPos, true)
+    }
+  }, [open])
+
   // Close on outside click
   useEffect(() => {
+    if (!open) return
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (ref.current?.contains(target)) return
+      if ((target as Element).closest?.('[data-model-select-menu]')) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [open])
 
   const q = query.toLowerCase()
   const filtered: ModelGroup[] = query
@@ -109,15 +132,21 @@ function ModelSelect({
       </button>
 
       {/* Dropdown */}
-      {open && (
+      {open && createPortal(
         <div
-          className="absolute left-0 right-0 mt-1.5 rounded-[14px] overflow-hidden z-50"
+          data-model-select-menu
+          className="rounded-[14px] overflow-hidden"
           style={{
+            position: 'fixed',
+            top: menuPos.top,
+            left: menuPos.left,
+            width: menuPos.width,
+            zIndex: 9999,
             background: 'var(--glass-strong)',
             backdropFilter: 'blur(24px) saturate(200%)',
             WebkitBackdropFilter: 'blur(24px) saturate(200%)',
             border: '1px solid var(--glass-border)',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.35)',
+            boxShadow: '0 16px 48px rgba(15, 23, 42, 0.14)',
           }}
         >
           {/* Search */}
@@ -202,7 +231,8 @@ function ModelSelect({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

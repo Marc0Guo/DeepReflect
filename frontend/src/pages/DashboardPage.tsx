@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { StatCard } from '../components/Dashboard/StatCard'
+import { DashboardMetricsGrid } from '../components/Dashboard/DashboardMetricsGrid'
 import { ConceptTable } from '../components/Dashboard/ConceptTable'
 import {
   DashboardFilterBar,
   DEFAULT_DASHBOARD_FILTERS,
-  periodLabel,
 } from '../components/Dashboard/DashboardFilterBar'
-import type { Concept, DashboardFilters, Stats } from '../types'
+import { AgentUsageCharts } from '../components/Dashboard/AgentUsageCharts'
+import { BehaviorInsights } from '../components/Dashboard/BehaviorInsights'
+import { ImportCursorModal } from '../components/Dashboard/ImportCursorModal'
+import { RunAnalysisModal } from '../components/Dashboard/RunAnalysisModal'
+import type { Concept, DashboardAnalytics, DashboardFilters, DashboardInsights, Stats } from '../types'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -18,13 +21,17 @@ function getGreeting() {
 
 export function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null)
+  const [insights, setInsights] = useState<DashboardInsights | null>(null)
+  const [calendarYear, setCalendarYear] = useState<number | undefined>(undefined)
   const [concepts, setConcepts] = useState<Concept[]>([])
   const [filters, setFilters] = useState<DashboardFilters>(DEFAULT_DASHBOARD_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState<DashboardFilters>(DEFAULT_DASHBOARD_FILTERS)
   const [loading, setLoading] = useState(true)
-  const [analyzing, setAnalyzing] = useState(false)
   const [ingesting, setIngesting] = useState(false)
-  const [ingestingCursor, setIngestingCursor] = useState(false)
+  const [cursorModalOpen, setCursorModalOpen] = useState(false)
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false)
+  const [clearingMemory, setClearingMemory] = useState(false)
   const [importNotice, setImportNotice] = useState<string | null>(null)
 
   useEffect(() => {
@@ -41,26 +48,27 @@ export function DashboardPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, c] = await Promise.all([api.stats(appliedFilters), api.concepts(1, appliedFilters)])
+      const [s, c, a, ins] = await Promise.all([
+        api.stats(appliedFilters),
+        api.concepts(1, appliedFilters),
+        api.dashboardAnalytics(appliedFilters),
+        api.dashboardInsights(appliedFilters, calendarYear),
+      ])
       setStats(s)
       setConcepts(c)
-    } catch (_) {}
+      setAnalytics(a)
+      setInsights(ins)
+    } catch (err) {
+      console.error('Dashboard load failed', err)
+    }
     setLoading(false)
-  }, [appliedFilters])
+  }, [appliedFilters, calendarYear])
 
   useEffect(() => {
     load()
   }, [load])
 
   const sources = stats?.available_sources ?? []
-
-  const periodStatLabel =
-    appliedFilters.period !== 'all' ? periodLabel(appliedFilters.period) : 'This Week'
-
-  const periodStatValue =
-    appliedFilters.period !== 'all'
-      ? (stats?.period_turns ?? 0)
-      : (stats?.weekly_turns ?? 0)
 
   if (loading && !stats) {
     return (
@@ -133,24 +141,11 @@ export function DashboardPage() {
             {ingesting ? 'Importing...' : 'Import Claude'}
           </button>
           <button
-            onClick={async () => {
-              setIngestingCursor(true)
+            onClick={() => {
               setImportNotice(null)
-              try {
-                const result = await api.ingestCursor()
-                if (result.imported === 0) {
-                  setImportNotice('No Cursor conversations found in local storage.')
-                } else {
-                  setImportNotice(`Imported ${result.imported} Cursor turns (${result.new} new).`)
-                }
-              } catch {
-                setImportNotice('Cursor import failed. Is the backend running on port 7733?')
-              }
-              setIngestingCursor(false)
-              load()
+              setCursorModalOpen(true)
             }}
-            disabled={ingestingCursor}
-            className="glass-subtle px-4 py-2.5 text-[13px] font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 flex items-center gap-2 cursor-pointer"
+            className="glass-subtle px-4 py-2.5 text-[13px] font-medium transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer"
             style={{ color: 'var(--text-secondary)' }}
           >
             <svg
@@ -165,19 +160,51 @@ export function DashboardPage() {
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <path d="M9 9l6 6M15 9l-6 6" />
             </svg>
-            {ingestingCursor ? 'Importing...' : 'Import Cursor'}
+            Import Cursor
           </button>
           <button
             onClick={async () => {
-              setAnalyzing(true)
+              if (
+                !window.confirm(
+                  'Clear all imported conversations, concepts, flashcards, and study content from memory? This cannot be undone.',
+                )
+              ) {
+                return
+              }
+              setClearingMemory(true)
+              setImportNotice(null)
               try {
-                await api.analyze(100)
-              } catch {}
-              setAnalyzing(false)
-              load()
+                await api.clearMemory()
+                setImportNotice('Memory cleared. Re-import to load conversations again.')
+                load()
+              } catch {
+                setImportNotice('Clear memory failed. Is the backend running on port 7733?')
+              }
+              setClearingMemory(false)
             }}
-            disabled={analyzing}
-            className="px-4 py-2.5 text-[13px] font-semibold rounded-[14px] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 flex items-center gap-2 cursor-pointer"
+            disabled={clearingMemory}
+            className="glass-subtle px-4 py-2.5 text-[13px] font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 flex items-center gap-2 cursor-pointer"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
+            {clearingMemory ? 'Clearing...' : 'Clear memory'}
+          </button>
+          <button
+            onClick={() => setAnalysisModalOpen(true)}
+            className="px-4 py-2.5 text-[13px] font-semibold rounded-[14px] transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 cursor-pointer"
             style={{
               background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))',
               color: 'white',
@@ -196,7 +223,7 @@ export function DashboardPage() {
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            {analyzing ? 'Analyzing...' : 'Run Analysis'}
+            Run Analysis
           </button>
         </div>
       </div>
@@ -210,6 +237,12 @@ export function DashboardPage() {
         </div>
       )}
 
+      {stats && (
+        <div className={`animate-fade-in-up ${loading ? 'opacity-60' : ''}`}>
+          <DashboardMetricsGrid stats={stats} />
+        </div>
+      )}
+
       <DashboardFilterBar
         filters={filters}
         sources={sources}
@@ -220,96 +253,18 @@ export function DashboardPage() {
         }}
       />
 
-      {stats && (
-        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${loading ? 'opacity-60' : ''}`}>
-          <div className="animate-fade-in-up stagger-2">
-            <StatCard
-              label={stats.filters_active ? 'Filtered Exchanges' : 'Total Exchanges'}
-              value={stats.total_turns}
-              accentVar="--accent"
-              icon={
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--accent)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-              }
-            />
-          </div>
-          <div className="animate-fade-in-up stagger-3">
-            <StatCard
-              label={periodStatLabel}
-              value={periodStatValue}
-              accentVar="--accent-secondary"
-              icon={
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--accent-secondary)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-              }
-            />
-          </div>
-          <div className="animate-fade-in-up stagger-4">
-            <StatCard
-              label={stats.filters_active ? 'Matching Concepts' : 'Concepts Tracked'}
-              value={stats.total_concepts}
-              accentVar="--accent-warm"
-              icon={
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--accent-warm)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-              }
-            />
-          </div>
-          <div className="animate-fade-in-up stagger-5">
-            <StatCard
-              label="Flashcards"
-              value={stats.total_flashcards}
-              accentVar="--accent-pink"
-              icon={
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--accent-pink)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <rect x="2" y="6" width="16" height="14" rx="2" />
-                  <path d="M6 2h12a2 2 0 0 1 2 2v12" />
-                </svg>
-              }
-            />
-          </div>
-        </div>
-      )}
+      <div className={loading ? 'opacity-60' : ''}>
+        <AgentUsageCharts data={analytics} period={appliedFilters.period} />
+      </div>
+
+      <div className={loading ? 'opacity-60' : ''}>
+        <BehaviorInsights
+          data={insights}
+          sourceFilter={appliedFilters.source}
+          calendarYear={calendarYear ?? insights?.calendar_year ?? new Date().getFullYear()}
+          onCalendarYearChange={setCalendarYear}
+        />
+      </div>
 
       {stats && Object.keys(stats.sources).length > 0 && (
         <div className={`glass p-6 animate-fade-in-up stagger-6 ${loading ? 'opacity-60' : ''}`}>
@@ -344,6 +299,34 @@ export function DashboardPage() {
         </div>
         <ConceptTable concepts={concepts.slice(0, 20)} />
       </div>
+
+      <ImportCursorModal
+        open={cursorModalOpen}
+        onClose={() => setCursorModalOpen(false)}
+        onComplete={(result) => {
+          if (result) {
+            if (result.imported === 0) {
+              setImportNotice('No Cursor conversations found in local storage.')
+            } else {
+              setImportNotice(`Imported ${result.imported} Cursor turns (${result.new} new).`)
+            }
+            load()
+          }
+        }}
+      />
+
+      <RunAnalysisModal
+        open={analysisModalOpen}
+        onClose={() => setAnalysisModalOpen(false)}
+        onComplete={(result) => {
+          if (result) {
+            setImportNotice(
+              `Analyzed ${result.processed} messages${result.errors > 0 ? ` (${result.errors} failed)` : ''}. ${result.remaining} still unanalyzed.`,
+            )
+            load()
+          }
+        }}
+      />
     </div>
   )
 }

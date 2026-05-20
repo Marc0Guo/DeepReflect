@@ -113,7 +113,7 @@ export function DashboardFilterBar({ filters, sources, onChange, onClear }: Prop
 }
 
 export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
-  period: 'all',
+  period: 'week',
   source: '',
   concept: '',
   status: 'all',

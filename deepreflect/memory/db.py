@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-from sqlmodel import Session, SQLModel, and_, col, create_engine, func, select, text
+from sqlmodel import Session, SQLModel, and_, col, create_engine, delete, func, select, text
 
 from deepreflect.memory.models import (
     Concept,
@@ -84,6 +85,65 @@ def get_turns(
 
 def get_unanalyzed_turns(session: Session) -> list[ConversationTurn]:
     return get_turns(session, analyzed=False)
+
+
+def _unanalyzed_stmt(
+    since: Optional[datetime] = None,
+    until: Optional[datetime] = None,
+    source: Optional[str] = None,
+):
+    stmt = select(ConversationTurn).where(ConversationTurn.analyzed == False)  # noqa: E712
+    if since:
+        stmt = stmt.where(ConversationTurn.timestamp >= since)
+    if until:
+        stmt = stmt.where(ConversationTurn.timestamp <= until)
+    if source:
+        stmt = stmt.where(ConversationTurn.source == source)
+    return stmt
+
+
+def count_unanalyzed_turns(
+    session: Session,
+    since: Optional[datetime] = None,
+    until: Optional[datetime] = None,
+    source: Optional[str] = None,
+) -> int:
+    stmt = select(func.count(col(ConversationTurn.id))).select_from(ConversationTurn)
+    stmt = stmt.where(ConversationTurn.analyzed == False)  # noqa: E712
+    if since:
+        stmt = stmt.where(ConversationTurn.timestamp >= since)
+    if until:
+        stmt = stmt.where(ConversationTurn.timestamp <= until)
+    if source:
+        stmt = stmt.where(ConversationTurn.source == source)
+    return int(session.exec(stmt).one())
+
+
+def get_unanalyzed_date_bounds(
+    session: Session,
+) -> tuple[Optional[datetime], Optional[datetime]]:
+    """Earliest and latest timestamps among unanalyzed turns."""
+    stmt = select(
+        func.min(ConversationTurn.timestamp),
+        func.max(ConversationTurn.timestamp),
+    ).where(ConversationTurn.analyzed == False)  # noqa: E712
+    row = session.exec(stmt).one()
+    return row[0], row[1]
+
+
+def get_unanalyzed_turns_for_analysis(
+    session: Session,
+    limit: Optional[int] = 50,
+    since: Optional[datetime] = None,
+    until: Optional[datetime] = None,
+    source: Optional[str] = None,
+) -> list[ConversationTurn]:
+    """Unanalyzed turns, newest first; optional cap by limit."""
+    stmt = _unanalyzed_stmt(since, until, source)
+    stmt = stmt.order_by(ConversationTurn.timestamp.desc())
+    if limit is not None:
+        stmt = stmt.limit(max(1, limit))
+    return list(session.exec(stmt))
 
 
 # --- Concepts ---
@@ -270,6 +330,175 @@ def get_filtered_concepts(
     ]
 
 
+_SESSION_GAP = timedelta(minutes=30)
+_DEFAULT_TURN_DURATION = timedelta(minutes=5)
+_CHARS_PER_TOKEN = 4  # rough estimate when providers don't log usage
+
+
+def estimate_tokens(text: str) -> int:
+    """Estimate tokens from text length (~4 chars/token for English/code)."""
+    if not text or not str(text).strip():
+        return 0
+    return max(1, len(str(text)) // _CHARS_PER_TOKEN)
+
+
+def _sum_filtered_tokens(session: Session, filters: DashboardFilters) -> int:
+    stmt = select(
+        ConversationTurn.id,
+        ConversationTurn.user_prompt,
+        ConversationTurn.ai_response,
+    )
+    for clause in _turn_filter_clauses(filters):
+        stmt = stmt.where(clause)
+
+    if filters.concept or filters.status:
+        concepts = get_filtered_concepts(session, filters, min_ask_count=1, limit=10_000)
+        if not concepts:
+            return 0
+        concept_ids = [c["id"] for c in concepts]
+        stmt = stmt.join(
+            ConceptMention, ConceptMention.turn_id == ConversationTurn.id
+        ).where(col(ConceptMention.concept_id).in_(concept_ids))
+
+    seen_ids: set[int] = set()
+    total = 0
+    for turn_id, prompt, response in session.exec(stmt).all():
+        if turn_id in seen_ids:
+            continue
+        seen_ids.add(turn_id)
+        total += estimate_tokens(prompt) + estimate_tokens(response)
+    return total
+
+
+def _filtered_turn_rows(
+    session: Session,
+    filters: DashboardFilters,
+) -> list[tuple[datetime, str]]:
+    """(timestamp, session_id) for turns matching dashboard filters."""
+    stmt = select(
+        ConversationTurn.id,
+        ConversationTurn.timestamp,
+        ConversationTurn.session_id,
+    )
+    for clause in _turn_filter_clauses(filters):
+        stmt = stmt.where(clause)
+
+    if filters.concept or filters.status:
+        concepts = get_filtered_concepts(session, filters, min_ask_count=1, limit=10_000)
+        if not concepts:
+            return []
+        concept_ids = [c["id"] for c in concepts]
+        stmt = stmt.join(
+            ConceptMention, ConceptMention.turn_id == ConversationTurn.id
+        ).where(col(ConceptMention.concept_id).in_(concept_ids))
+
+    seen_ids: set[int] = set()
+    result: list[tuple[datetime, str]] = []
+    for turn_id, ts, session_id in session.exec(stmt).all():
+        if turn_id in seen_ids:
+            continue
+        seen_ids.add(turn_id)
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        result.append((ts, session_id or ""))
+    return result
+
+
+def _longest_day_streak(active_days: list[date]) -> int:
+    if not active_days:
+        return 0
+    sorted_days = sorted(set(active_days))
+    longest = 1
+    current = 1
+    for i in range(1, len(sorted_days)):
+        if (sorted_days[i] - sorted_days[i - 1]).days == 1:
+            current += 1
+        else:
+            current = 1
+        longest = max(longest, current)
+    return longest
+
+
+def _estimate_duration_seconds(rows: list[tuple[datetime, str]]) -> int:
+    by_session: dict[str, list[datetime]] = defaultdict(list)
+    for ts, session_id in rows:
+        by_session[session_id].append(ts)
+
+    total = timedelta(0)
+    for timestamps in by_session.values():
+        timestamps.sort()
+        if len(timestamps) == 1:
+            total += _DEFAULT_TURN_DURATION
+            continue
+        for i in range(len(timestamps) - 1):
+            gap = timestamps[i + 1] - timestamps[i]
+            if gap <= timedelta(0):
+                total += _DEFAULT_TURN_DURATION
+            else:
+                total += min(gap, _SESSION_GAP)
+        total += _DEFAULT_TURN_DURATION
+    return int(total.total_seconds())
+
+
+def get_dashboard_metrics(session: Session, filters: DashboardFilters) -> dict:
+    rows = _filtered_turn_rows(session, filters)
+    exchange_count = len(rows)
+
+    if not rows:
+        category_count = _count_filtered_categories(session, filters)
+        return {
+            "last_updated": None,
+            "coverage_days": 0,
+            "history_start": None,
+            "history_end": None,
+            "longest_streak_days": 0,
+            "total_duration_seconds": 0,
+            "category_count": category_count,
+            "filtered_exchanges": 0,
+            "filtered_tokens": 0,
+        }
+
+    timestamps = [ts for ts, _ in rows]
+    active_days = [ts.date() for ts in timestamps]
+    earliest = min(timestamps)
+    latest = max(timestamps)
+    coverage_days = (latest.date() - earliest.date()).days + 1
+
+    return {
+        "last_updated": latest.isoformat(),
+        "coverage_days": coverage_days,
+        "history_start": earliest.isoformat(),
+        "history_end": latest.isoformat(),
+        "longest_streak_days": _longest_day_streak(active_days),
+        "total_duration_seconds": _estimate_duration_seconds(rows),
+        "category_count": _count_filtered_categories(session, filters),
+        "filtered_exchanges": exchange_count,
+        "filtered_tokens": _sum_filtered_tokens(session, filters),
+    }
+
+
+def _count_filtered_categories(session: Session, filters: DashboardFilters) -> Optional[int]:
+    """Distinct concept categories in filtered data; None if analysis has not run."""
+    stmt = (
+        select(func.count(func.distinct(Concept.category)))
+        .select_from(Concept)
+        .join(ConceptMention, ConceptMention.concept_id == Concept.id)
+        .join(ConversationTurn, ConversationTurn.id == ConceptMention.turn_id)
+        .where(Concept.category != "")
+        .where(Concept.category.is_not(None))
+    )
+    for clause in _turn_filter_clauses(filters):
+        stmt = stmt.where(clause)
+    if filters.concept or filters.status:
+        concepts = get_filtered_concepts(session, filters, min_ask_count=1, limit=10_000)
+        if not concepts:
+            return None
+        concept_ids = [c["id"] for c in concepts]
+        stmt = stmt.where(col(ConceptMention.concept_id).in_(concept_ids))
+    count = session.exec(stmt).one()
+    return int(count) if count else None
+
+
 def get_filtered_stats(session: Session, filters: DashboardFilters) -> dict:
     turn_clauses = _turn_filter_clauses(filters)
     turn_count_stmt = select(func.count(col(ConversationTurn.id)))
@@ -305,8 +534,10 @@ def get_filtered_stats(session: Session, filters: DashboardFilters) -> dict:
     else:
         total_flashcards = session.exec(select(func.count(col(Flashcard.id)))).one()
 
+    metrics = get_dashboard_metrics(session, filters)
+
     return {
-        "total_turns": total_turns,
+        "total_turns": metrics["filtered_exchanges"],
         "total_concepts": len(concepts),
         "total_flashcards": total_flashcards,
         "weekly_turns": weekly_turns,
@@ -314,6 +545,122 @@ def get_filtered_stats(session: Session, filters: DashboardFilters) -> dict:
         "sources": {src: cnt for src, cnt in sources},
         "available_sources": get_available_sources(session),
         "filters_active": filters_are_active(filters),
+        **metrics,
+    }
+
+
+# --- Dashboard analytics (activity timeline + distributions) ---
+
+CATEGORY_COLORS: dict[str, str] = {
+    "python": "#3b6fd9",
+    "ml": "#9b7ede",
+    "git": "#6bcb9a",
+    "general": "#64748b",
+    "devops": "#f5a962",
+    "web": "#5ec9e8",
+    "data": "#f07167",
+}
+
+
+def _category_color(category: str) -> str:
+    key = (category or "general").lower().strip()
+    return CATEGORY_COLORS.get(key, "#94a3b8")
+
+
+def _resolve_activity_window(
+    session: Session,
+    filters: DashboardFilters,
+) -> tuple[datetime, datetime, int]:
+    """Calendar-day range for the activity chart, aligned with dashboard period filters."""
+    now = datetime.now(timezone.utc)
+    window_end = filters.until if filters.until else now
+    if window_end.tzinfo is None:
+        window_end = window_end.replace(tzinfo=timezone.utc)
+
+    if filters.since:
+        window_start = filters.since
+        if window_start.tzinfo is None:
+            window_start = window_start.replace(tzinfo=timezone.utc)
+    else:
+        stmt = select(func.min(ConversationTurn.timestamp))
+        if filters.source:
+            stmt = stmt.where(ConversationTurn.source == filters.source)
+        earliest = session.exec(stmt).one()
+        if earliest:
+            window_start = earliest
+            if window_start.tzinfo is None:
+                window_start = window_start.replace(tzinfo=timezone.utc)
+        else:
+            window_start = now - timedelta(days=29)
+
+    window_start = window_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_count = (window_end.date() - window_start.date()).days + 1
+    day_count = max(1, day_count)
+
+    # All-time ranges can span years — cap chart length for readability
+    max_days = 366
+    if day_count > max_days:
+        window_start = (window_end - timedelta(days=max_days - 1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        day_count = max_days
+
+    return window_start, window_end, day_count
+
+
+def get_dashboard_analytics(
+    session: Session,
+    filters: DashboardFilters,
+) -> dict:
+    """Daily activity + topic/category distributions for the agent usage dashboard."""
+    window_start, window_end, days = _resolve_activity_window(session, filters)
+    turn_clauses = _turn_filter_clauses(filters)
+
+    day_expr = func.strftime("%Y-%m-%d", ConversationTurn.timestamp).label("day")
+    activity_stmt = (
+        select(day_expr, func.count(col(ConversationTurn.id)).label("count"))
+        .where(ConversationTurn.timestamp >= window_start)
+        .where(ConversationTurn.timestamp <= window_end)
+    )
+    for clause in turn_clauses:
+        activity_stmt = activity_stmt.where(clause)
+    activity_stmt = activity_stmt.group_by(day_expr).order_by(day_expr)
+    activity_rows = session.exec(activity_stmt).all()
+    counts_by_day = {str(day): int(count) for day, count in activity_rows if day}
+
+    activity: list[dict] = []
+    for i in range(days):
+        day = (window_start + timedelta(days=i)).strftime("%Y-%m-%d")
+        activity.append({"date": day, "count": counts_by_day.get(day, 0)})
+
+    concepts = get_filtered_concepts(session, filters, min_ask_count=1, limit=50)
+    topics = [
+        {
+            "name": c["name"],
+            "count": c["ask_count"],
+            "category": c["category"] or "general",
+        }
+        for c in concepts[:12]
+    ]
+
+    category_totals: dict[str, int] = {}
+    for c in concepts:
+        cat = (c["category"] or "general").lower()
+        category_totals[cat] = category_totals.get(cat, 0) + c["ask_count"]
+    categories = [
+        {
+            "name": name,
+            "count": count,
+            "color": _category_color(name),
+        }
+        for name, count in sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+    return {
+        "days": days,
+        "activity": activity,
+        "topics": topics,
+        "categories": categories,
     }
 
 
@@ -336,6 +683,8 @@ def get_stats(session: Session) -> dict:
         .group_by(ConversationTurn.source)
     ).all()
 
+    metrics = get_dashboard_metrics(session, DashboardFilters())
+
     return {
         "total_turns": total_turns,
         "total_concepts": total_concepts,
@@ -345,6 +694,7 @@ def get_stats(session: Session) -> dict:
         "sources": {src: cnt for src, cnt in sources},
         "available_sources": get_available_sources(session),
         "filters_active": False,
+        **metrics,
     }
 
 
@@ -376,3 +726,19 @@ def get_content_history(
         .limit(limit)
     )
     return list(session.exec(stmt))
+
+
+def clear_memory(session: Session) -> dict[str, int]:
+    """Remove all imported conversations, concepts, and derived study content."""
+    counts: dict[str, int] = {}
+    for model, key in [
+        (ConceptMention, "mentions"),
+        (Flashcard, "flashcards"),
+        (GeneratedContent, "generated"),
+        (ConversationTurn, "turns"),
+        (Concept, "concepts"),
+    ]:
+        result = session.exec(delete(model))
+        counts[key] = result.rowcount  # type: ignore[attr-defined]
+    session.commit()
+    return counts

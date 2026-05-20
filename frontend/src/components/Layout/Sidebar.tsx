@@ -33,19 +33,23 @@ export function Sidebar() {
     if (typeof window === 'undefined') return true
     return localStorage.getItem('dr-sidebar-pinned') !== 'false'
   })
-  const [hovering, setHovering] = useState(false)
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const edgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const visible = pinned || hovering
+  function openSidebar() {
+    setPinned(true)
+    localStorage.setItem('dr-sidebar-pinned', 'true')
+  }
 
   function handleEdgeEnter() {
     if (pinned) return
-    hoverTimer.current = setTimeout(() => setHovering(true), 80)
+    edgeTimer.current = setTimeout(openSidebar, 80)
   }
-  function handleSidebarLeave() {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    if (!pinned) setHovering(false)
-  }
+
+  useEffect(() => {
+    return () => {
+      if (edgeTimer.current) clearTimeout(edgeTimer.current)
+    }
+  }, [])
 
   // Slide pill to whichever nav item is active
   useEffect(() => {
@@ -57,14 +61,10 @@ export function Sidebar() {
     if (el) setPill({ top: el.offsetTop, height: el.offsetHeight, ready: true })
   }, [location.pathname])
 
-  function togglePin() {
-    if (pinned) {
-      setPinned(false)
-      localStorage.setItem('dr-sidebar-pinned', 'false')
-    } else {
-      // Sidebar visible via hover — close it
-      setHovering(false)
-    }
+  function collapseSidebar() {
+    if (edgeTimer.current) clearTimeout(edgeTimer.current)
+    setPinned(false)
+    localStorage.setItem('dr-sidebar-pinned', 'false')
   }
 
   return (
@@ -72,7 +72,7 @@ export function Sidebar() {
       {/* Flex spacer — always rendered, width animates to push content */}
       <div
         style={{
-          width: visible ? 220 : 0,
+          width: pinned ? 220 : 0,
           flexShrink: 0,
           transition: 'width 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
@@ -97,12 +97,10 @@ export function Sidebar() {
           left: 0,
           borderRadius: '0 20px 20px 0',
           borderLeft: 'none',
-          transform: visible ? 'translateX(0)' : 'translateX(calc(-100% - 4px))',
+          transform: pinned ? 'translateX(0)' : 'translateX(calc(-100% - 4px))',
           transition: 'transform 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
           willChange: 'transform',
         }}
-        onMouseEnter={() => { if (!pinned) { if (hoverTimer.current) clearTimeout(hoverTimer.current); setHovering(true) } }}
-        onMouseLeave={handleSidebarLeave}
       >
         {/* Logo + toggle */}
         <div className="px-3 mb-8 flex items-center gap-2.5 mt-1">
@@ -120,7 +118,7 @@ export function Sidebar() {
 
           {/* Collapse / pin toggle button */}
           <button
-            onClick={togglePin}
+            onClick={collapseSidebar}
             title="Collapse sidebar"
             className="w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95 shrink-0"
             style={{

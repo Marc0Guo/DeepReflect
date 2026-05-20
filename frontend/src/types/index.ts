@@ -46,12 +46,75 @@ export interface Stats {
   sources: Record<string, number>
   available_sources: string[]
   filters_active: boolean
+  last_updated: string | null
+  coverage_days: number
+  history_start: string | null
+  history_end: string | null
+  longest_streak_days: number
+  total_duration_seconds: number
+  category_count: number | null
+  filtered_exchanges: number
+  filtered_tokens?: number
 }
 
 export interface IngestResult {
   imported: number
   new: number
   source: string
+}
+
+export interface CursorImportProgress {
+  stage: 'discover' | 'import' | 'parsed' | 'saving' | 'done'
+  progress: number
+  message: string
+  imported?: number
+  new?: number
+}
+
+export type AnalyzeMode = 'recent' | 'period'
+
+export interface AnalyzeBounds {
+  total_unanalyzed: number
+  date_min: string | null
+  date_max: string | null
+  recent_limit_min: number
+  recent_limit_max: number
+  recent_limit_default: number
+}
+
+export interface AnalyzeSelection {
+  mode: 'recent' | 'range'
+  limit?: number
+  since?: string
+  until?: string
+}
+
+export interface AnalyzePreview {
+  total_unanalyzed: number
+  in_selection: number
+  to_process: number
+  limit: number | null
+  since: string | null
+  until: string | null
+  summary: string
+  detail: string
+}
+
+export interface AnalyzeProgress {
+  stage: 'start' | 'progress' | 'done'
+  progress: number
+  message: string
+  total?: number
+  current?: number
+  processed?: number
+  errors?: number
+  remaining?: number
+}
+
+export interface AnalyzeResult {
+  processed: number
+  errors: number
+  remaining: number
 }
 
 export type DashboardPeriod = 'all' | 'day' | 'week' | 'month' | 'year'
@@ -62,6 +125,76 @@ export interface DashboardFilters {
   source: string
   concept: string
   status: DashboardStatus
+}
+
+export interface ActivityPoint {
+  date: string
+  count: number
+}
+
+export interface TopicSlice {
+  name: string
+  count: number
+  category: string
+}
+
+export interface CategorySlice {
+  name: string
+  count: number
+  color: string
+}
+
+export interface DashboardAnalytics {
+  days: number
+  activity: ActivityPoint[]
+  topics: TopicSlice[]
+  categories: CategorySlice[]
+}
+
+export interface CalendarDay {
+  date: string
+  count: number
+  cursor: number
+  claude: number
+}
+
+export interface HeatmapCell {
+  dow: number
+  hour: number
+  count: number
+  cursor: number
+  claude: number
+}
+
+export interface SessionDepthBucket {
+  bucket: string
+  count: number
+}
+
+export interface ThreadSummary {
+  label: string
+  short_label: string
+  source: string
+  session_id: string
+  count: number
+}
+
+export interface ThreadTurn {
+  id: number
+  timestamp: string
+  user_prompt: string
+  ai_response: string
+  source: string
+}
+
+export interface DashboardInsights {
+  calendar_years?: number[]
+  calendar_year?: number
+  calendar?: CalendarDay[]
+  calendar_max?: number
+  time_heatmap?: HeatmapCell[]
+  time_heatmap_max?: number
+  word_cloud?: { text: string; count: number; weight: number }[]
 }
 
 export interface Flashcard {
