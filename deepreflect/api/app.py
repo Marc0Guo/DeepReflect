@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -7,9 +9,37 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from deepreflect.api.routes import analyze, flashcards, graph, ingest, settings, summary
+from deepreflect.api.routes import notifications
 from deepreflect.config import ensure_dirs, load_config
 
+log = logging.getLogger(__name__)
+
 _FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Start APScheduler on startup, shut it down on exit."""
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from deepreflect.notifications.scheduler import setup_notification_jobs
+
+        cfg = load_config()
+        scheduler = AsyncIOScheduler()
+        setup_notification_jobs(scheduler, cfg)
+        scheduler.start()
+        app.state.scheduler = scheduler
+        log.info("Scheduler started.")
+    except ImportError:
+        log.warning("apscheduler not installed — notifications disabled.")
+        app.state.scheduler = None
+
+    yield
+
+    scheduler = getattr(app.state, "scheduler", None)
+    if scheduler is not None:
+        scheduler.shutdown(wait=False)
+        log.info("Scheduler stopped.")
 
 
 def create_app() -> FastAPI:
@@ -20,6 +50,7 @@ def create_app() -> FastAPI:
         title="DeepReflect",
         description="Local AI learning memory agent",
         version="0.1.0",
+        lifespan=_lifespan,
     )
 
     app.add_middleware(
@@ -36,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(summary.router, prefix="/api")
     app.include_router(flashcards.router, prefix="/api")
     app.include_router(settings.router, prefix="/api")
+    app.include_router(notifications.router, prefix="/api")
 
     # Serve compiled React build if it exists
     if _FRONTEND_DIST.exists():

@@ -46,8 +46,8 @@ function TabBar({
       ref={containerRef}
       className="relative flex gap-0 p-1 w-fit"
       style={{
-        borderRadius: 16,
-        background: 'rgba(255,255,255,0.04)',
+        borderRadius: 99,
+        background: 'var(--surface-tab-bar)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
       }}
@@ -60,11 +60,11 @@ function TabBar({
           style={{
             left: pill.left,
             width: pill.width,
-            borderRadius: 12,
-            background: 'rgba(255,255,255,0.09)',
+            borderRadius: 99,
+            background: 'var(--surface-tab-pill)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)',
+            boxShadow: 'var(--tab-pill-shadow)',
             transition: 'left 0.38s cubic-bezier(0.34,1.56,0.64,1), width 0.28s cubic-bezier(0.34,1.56,0.64,1)',
           }}
         />
@@ -77,7 +77,7 @@ function TabBar({
             key={t.key}
             ref={(el) => { btnRefs.current[t.key] = el }}
             onClick={() => onChange(t.key)}
-            className="relative flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-[12px] cursor-pointer transition-colors duration-200"
+            className="relative flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-full cursor-pointer transition-colors duration-200"
             style={{
               color: isActive ? 'var(--accent)' : 'var(--text-muted)',
               background: 'transparent',
@@ -91,7 +91,7 @@ function TabBar({
                 style={{
                   background: isActive
                     ? 'color-mix(in srgb, var(--accent) 18%, transparent)'
-                    : 'rgba(255,255,255,0.06)',
+                    : 'var(--surface-raised)',
                   color: isActive ? 'var(--accent)' : 'var(--text-faint)',
                   transition: 'background 0.25s, color 0.25s',
                 }}
@@ -128,10 +128,10 @@ function HistoryList({
           onClick={() => onSelect(item)}
           className="w-full text-left px-4 py-3 rounded-[12px] transition-all duration-200 cursor-pointer"
           style={{
-            background: selectedId === item.id ? 'rgba(255,255,255,0.07)' : 'transparent',
+            background: selectedId === item.id ? 'var(--surface-history-selected)' : 'transparent',
             backdropFilter: selectedId === item.id ? 'blur(8px)' : 'none',
             WebkitBackdropFilter: selectedId === item.id ? 'blur(8px)' : 'none',
-            boxShadow: selectedId === item.id ? 'inset 0 1px 0 rgba(255,255,255,0.12)' : 'none',
+            boxShadow: selectedId === item.id ? 'var(--tab-pill-shadow)' : 'none',
           }}
         >
           <div className="text-[12px] font-semibold truncate" style={{ color: selectedId === item.id ? 'var(--accent)' : 'var(--text-secondary)' }}>

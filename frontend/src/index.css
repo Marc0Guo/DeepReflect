@@ -4,74 +4,100 @@
 
 /* ═══════════════════════════════════════════════════════
    LIQUID GLASS DESIGN SYSTEM
-   Inspired by Apple's translucent glass aesthetic
+   Light-first SaaS Dashboard — dark mode available
    ═══════════════════════════════════════════════════════ */
 
+/* ── Dark theme — premium solid background ──────────────────────────────────── */
 :root {
-  /* Zero fill — shape comes from the gradient rim, depth from blur */
-  --glass: rgba(255,255,255,0);
-  --glass-strong: rgba(255,255,255,0);
-  --glass-border: rgba(255,255,255,0.18);
-  --glass-border-strong: rgba(255,255,255,0.28);
+  /* Slightly filled glass so cards read against the solid bg */
+  --glass: rgba(255,255,255,0.05);
+  --glass-strong: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.10);
+  --glass-border-strong: rgba(255,255,255,0.16);
   --glass-blur: 18px;
-  --glass-inner: inset 0 1px 0 rgba(255,255,255,0.18);
-  --glass-shadow: 0 2px 16px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06);
-  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.08);
+  --glass-inner: inset 0 1px 0 rgba(255,255,255,0.14);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.40), 0 2px 6px rgba(0,0,0,0.20);
+  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.06);
 
-  --text-primary: rgba(255,255,255,0.95);
-  --text-secondary: rgba(255,255,255,0.65);
-  --text-muted: rgba(255,255,255,0.40);
-  --text-faint: rgba(255,255,255,0.22);
+  --text-primary: rgba(255,255,255,0.92);
+  --text-secondary: rgba(255,255,255,0.60);
+  --text-muted: rgba(255,255,255,0.38);
+  --text-faint: rgba(255,255,255,0.20);
 
   --accent: #64d2ff;
   --accent-secondary: #bf5af2;
   --accent-warm: #ff9f0a;
   --accent-green: #30d158;
   --accent-pink: #ff375f;
+  --accent-mint: #30d158;
+  --accent-coral: #ff6b6b;
 
-  /* Micro fills: just enough to make interactive elements visible */
   --surface-raised: rgba(255,255,255,0.05);
-  --surface-overlay: rgba(0,0,0,0.10);
+  --surface-overlay: rgba(0,0,0,0.15);
 
-  /* Rich mesh so colours bleed through transparent glass */
-  --mesh-1: #070f1a;
-  --mesh-2: #090e28;
-  --mesh-3: #0d1228;
-  --mesh-spot-1: rgba(100,210,255,0.32);
-  --mesh-spot-2: rgba(191,90,242,0.26);
-  --mesh-spot-3: rgba(48,209,88,0.14);
+  /* Component-level surface tokens */
+  --surface-pill: rgba(255,255,255,0.08);
+  --surface-tab-bar: rgba(255,255,255,0.05);
+  --surface-tab-pill: rgba(255,255,255,0.10);
+  --surface-history-selected: rgba(255,255,255,0.07);
+  --border-divider: rgba(255,255,255,0.08);
+  --tab-pill-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+
+  /* Pure solid background — no colorful mesh spots */
+  --mesh-1: #0c0c11;
+  --mesh-2: #0c0c11;
+  --mesh-3: #0c0c11;
+  --mesh-spot-1: transparent;
+  --mesh-spot-2: transparent;
+  --mesh-spot-3: transparent;
 }
 
+/* ── Light theme (SaaS dashboard) ──────────────────────────────────────────── */
 [data-theme="light"] {
-  --glass: rgba(255,255,255,0.12);
-  --glass-strong: rgba(255,255,255,0.20);
-  --glass-border: rgba(255,255,255,0.60);
-  --glass-border-strong: rgba(255,255,255,0.80);
-  --glass-blur: 16px;
-  --glass-inner: inset 0 1px 0 rgba(255,255,255,0.85);
-  --glass-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
-  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.6);
+  /* White translucent glass cards */
+  --glass: rgba(255,255,255,0.78);
+  --glass-strong: rgba(255,255,255,0.92);
+  --glass-border: rgba(0,0,0,0.07);
+  --glass-border-strong: rgba(0,0,0,0.12);
+  --glass-blur: 20px;
+  --glass-inner: inset 0 1px 0 rgba(255,255,255,1);
+  --glass-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
+  --glass-glow: 0 0 0 0.5px rgba(255,255,255,0.9);
 
-  --text-primary: rgba(0,0,0,0.85);
-  --text-secondary: rgba(0,0,0,0.55);
-  --text-muted: rgba(0,0,0,0.35);
-  --text-faint: rgba(0,0,0,0.18);
+  /* Accessible dark-on-light text */
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #c4c9d4;
 
-  --accent: #007aff;
-  --accent-secondary: #af52de;
-  --accent-warm: #ff9500;
-  --accent-green: #34c759;
-  --accent-pink: #ff2d55;
+  /* Pastel enterprise accents */
+  --accent: #4f7df9;           /* vivid blue */
+  --accent-secondary: #8b5cf6; /* violet */
+  --accent-warm: #f59e0b;      /* amber */
+  --accent-green: #10b981;     /* emerald mint */
+  --accent-pink: #f43f5e;      /* coral rose */
+  --accent-mint: #06d6a0;      /* cyan mint */
+  --accent-coral: #ff7043;     /* warm coral */
 
-  --surface-raised: rgba(255,255,255,0.14);
-  --surface-overlay: rgba(255,255,255,0.10);
+  /* Surfaces */
+  --surface-raised: rgba(0,0,0,0.035);
+  --surface-overlay: rgba(255,255,255,0.55);
 
-  --mesh-1: #cddcef;
-  --mesh-2: #d9cfeb;
-  --mesh-3: #c8ddf2;
-  --mesh-spot-1: rgba(0,122,255,0.20);
-  --mesh-spot-2: rgba(175,82,222,0.18);
-  --mesh-spot-3: rgba(52,199,89,0.10);
+  /* Component-level surface tokens */
+  --surface-pill: rgba(79,125,249,0.09);
+  --surface-tab-bar: rgba(0,0,0,0.045);
+  --surface-tab-pill: rgba(255,255,255,0.96);
+  --surface-history-selected: rgba(79,125,249,0.08);
+  --border-divider: rgba(0,0,0,0.06);
+  --tab-pill-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,1);
+
+  /* Soft gradient mesh — airy SaaS base */
+  --mesh-1: #f0f4fb;
+  --mesh-2: #eef1f9;
+  --mesh-3: #f4f0fb;
+  --mesh-spot-1: rgba(79,125,249,0.09);
+  --mesh-spot-2: rgba(139,92,246,0.08);
+  --mesh-spot-3: rgba(16,185,129,0.05);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -93,10 +119,10 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
-[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.10); }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.18); }
 
-/* Animated gradient mesh background */
+/* ── Animated gradient mesh background ──────────────────────────────────────── */
 .mesh-bg {
   position: fixed;
   inset: 0;
@@ -111,7 +137,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @layer components {
 
-  /* ── Standalone .liquid-glass (Apple ultra-thin spec) ─────────────────── */
+  /* ── Standalone .liquid-glass (Apple ultra-thin spec) ──────────────────── */
   .liquid-glass {
     background: rgba(255, 255, 255, 0.01);
     background-blend-mode: luminosity;
@@ -125,8 +151,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   /* ── Static rim — shared by all glass variants ────────────────────────────
-     Apple's liquid glass has a strong top highlight, near-invisible sides,
-     and a soft bottom reflection. The ::before encodes exactly that.        */
+     Strong top highlight, near-invisible sides, soft bottom reflection.      */
   .liquid-glass::before,
   .glass::before,
   .glass-strong::before,
@@ -154,7 +179,7 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 1;
   }
 
-  /* Light mode static rim — bright, clean */
+  /* Light mode static rim — bright, crisp */
   [data-theme="light"] .liquid-glass::before,
   [data-theme="light"] .glass::before,
   [data-theme="light"] .glass-strong::before,
@@ -162,22 +187,18 @@ h1, h2, h3, h4, h5, h6 {
     background: linear-gradient(
       170deg,
       rgba(255,255,255,1)    0%,
-      rgba(255,255,255,0.55) 18%,
-      rgba(255,255,255,0.10) 40%,
-      rgba(255,255,255,0.06) 55%,
-      rgba(255,255,255,0.18) 78%,
-      rgba(255,255,255,0.65) 100%
+      rgba(255,255,255,0.65) 18%,
+      rgba(255,255,255,0.15) 40%,
+      rgba(255,255,255,0.08) 55%,
+      rgba(255,255,255,0.20) 78%,
+      rgba(255,255,255,0.75) 100%
     );
   }
 
   /* ── Dynamic rim — mouse-following spotlight ──────────────────────────────
-     ::after uses the same 1px-frame mask but a radial-gradient whose
-     centre tracks the cursor (--mouse-x / --mouse-y from JS lerp).
-
      Asymmetric transitions:
-       • Enter (hover state):  fast — 0.08s, so it feels instant/snappy
-       • Leave (base state):   slow — 0.9s ease-out, so the glow "melts away"
-     This gives the silky, liquid feel the user is after.                    */
+       enter (hover): 0.08s fast — instant/snappy
+       leave (base):  0.9s ease-out — melts away, liquid feel               */
   .liquid-glass::after,
   .glass::after,
   .glass-strong::after,
@@ -200,12 +221,11 @@ h1, h2, h3, h4, h5, h6 {
     mask-composite: exclude;
     pointer-events: none;
     z-index: 2;
-    /* Slow fade-out so glow lingers (leave transition) */
     opacity: 0;
     transition: opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Fast fade-in on hover (enter transition overrides the rule above) */
+  /* Fast fade-in on hover */
   .liquid-glass:hover::after,
   .glass:hover::after,
   .glass-strong:hover::after,
@@ -248,8 +268,6 @@ h1, h2, h3, h4, h5, h6 {
     position: relative;
   }
 
-  /* glass-subtle: no backdrop-filter so it doesn't re-blur the already
-     blurred panel beneath it — just a very thin fill */
   .glass-subtle {
     background: var(--surface-raised);
     border: none;
@@ -274,9 +292,60 @@ h1, h2, h3, h4, h5, h6 {
     text-transform: uppercase;
     color: var(--text-muted);
   }
+
+  /* ── Dark mode glass borders — card definition on solid bg ─────────────── */
+  [data-theme="dark"] .glass,
+  :root:not([data-theme]) .glass {
+    border: 1px solid var(--glass-border);
+  }
+  [data-theme="dark"] .glass-strong,
+  :root:not([data-theme]) .glass-strong {
+    border: 1px solid var(--glass-border);
+  }
+
+  /* ── Light mode glass borders — SaaS card look ──────────────────────────── */
+  [data-theme="light"] .glass {
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  [data-theme="light"] .glass-strong {
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  [data-theme="light"] .glass-subtle {
+    background: rgba(0,0,0,0.035);
+    border: 1px solid rgba(0,0,0,0.055);
+  }
+
+  /* ── Light mode hover lift — softer enterprise feel ─────────────────────── */
+  [data-theme="light"] .glass-hover:hover {
+    transform: translateY(-2px) scale(1.003);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.09), 0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,1);
+  }
+
+  /* ── Pill-shaped interactive elements in light mode ─────────────────────── */
+  [data-theme="light"] button.glass-subtle,
+  [data-theme="light"] span.glass-subtle {
+    border-radius: 99px !important;
+  }
+
+  [data-theme="light"] .section-label {
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
 }
 
-/* Animations */
+/* ── Pill buttons in light mode (unlayered to beat Tailwind utilities) ─────── */
+[data-theme="light"] button.rounded-\[14px\] {
+  border-radius: 99px;
+}
+[data-theme="light"] button.rounded-\[12px\] {
+  border-radius: 99px;
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }

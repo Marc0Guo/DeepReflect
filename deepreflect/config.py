@@ -22,6 +22,16 @@ class Config(BaseModel):
     intervention_tone: str = "friendly"  # strict | friendly | funny
     data_dir: str = str(_DATA_DIR)
 
+    # ── Notification settings ─────────────────────────────────────────────────
+    notify_enabled: bool = False
+    notify_time: str = "21:00"          # HH:MM local time
+    discord_webhook_url: str = ""
+    slack_webhook_url: str = ""
+    slack_bot_token: str = ""           # optional; enables image upload
+    imessage_recipient: str = ""        # phone number or Apple ID email
+    wechat_recipient: str = ""          # exact contact display name in WeChat desktop
+    notify_channels: list[str] = []     # ["discord","slack","imessage","wechat"]
+
     @property
     def db_path(self) -> Path:
         return Path(self.data_dir) / "deepreflect.db"

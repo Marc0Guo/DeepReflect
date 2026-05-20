@@ -15,6 +15,15 @@ class SettingsUpdate(BaseModel):
     llm_base_url: str | None = None
     intervention_tone: str | None = None
     repeat_threshold: int | None = None
+    # Notification fields
+    notify_enabled: bool | None = None
+    notify_time: str | None = None
+    discord_webhook_url: str | None = None
+    slack_webhook_url: str | None = None
+    slack_bot_token: str | None = None
+    imessage_recipient: str | None = None
+    wechat_recipient: str | None = None
+    notify_channels: list[str] | None = None
 
 
 @router.get("")
@@ -32,6 +41,14 @@ async def get_settings():
         "repeat_threshold": cfg.repeat_threshold,
         "port": cfg.port,
         "data_dir": cfg.data_dir,
+        "notify_enabled": cfg.notify_enabled,
+        "notify_time": cfg.notify_time,
+        "notify_channels": cfg.notify_channels,
+        "discord_webhook_url": cfg.discord_webhook_url,
+        "slack_webhook_url": cfg.slack_webhook_url,
+        "slack_bot_token_set": bool(cfg.slack_bot_token),
+        "imessage_recipient": cfg.imessage_recipient,
+        "wechat_recipient": cfg.wechat_recipient,
     }
 
 
@@ -50,5 +67,21 @@ async def update_settings(body: SettingsUpdate):
         cfg.intervention_tone = body.intervention_tone
     if body.repeat_threshold is not None:
         cfg.repeat_threshold = body.repeat_threshold
+    if body.notify_enabled is not None:
+        cfg.notify_enabled = body.notify_enabled
+    if body.notify_time is not None:
+        cfg.notify_time = body.notify_time
+    if body.discord_webhook_url is not None:
+        cfg.discord_webhook_url = body.discord_webhook_url
+    if body.slack_webhook_url is not None:
+        cfg.slack_webhook_url = body.slack_webhook_url
+    if body.slack_bot_token is not None:
+        cfg.slack_bot_token = body.slack_bot_token
+    if body.imessage_recipient is not None:
+        cfg.imessage_recipient = body.imessage_recipient
+    if body.wechat_recipient is not None:
+        cfg.wechat_recipient = body.wechat_recipient
+    if body.notify_channels is not None:
+        cfg.notify_channels = body.notify_channels
     save_config(cfg)
     return {"ok": True}

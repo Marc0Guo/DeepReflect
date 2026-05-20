@@ -29,6 +29,24 @@ export function Sidebar() {
   const navRef = useRef<HTMLElement>(null)
   const [pill, setPill] = useState({ top: 0, height: 40, ready: false })
 
+  const [pinned, setPinned] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('dr-sidebar-pinned') !== 'false'
+  })
+  const [hovering, setHovering] = useState(false)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const visible = pinned || hovering
+
+  function handleEdgeEnter() {
+    if (pinned) return
+    hoverTimer.current = setTimeout(() => setHovering(true), 80)
+  }
+  function handleSidebarLeave() {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    if (!pinned) setHovering(false)
+  }
+
   // Slide pill to whichever nav item is active
   useEffect(() => {
     if (!navRef.current) return
@@ -36,88 +54,147 @@ export function Sidebar() {
       ? '/'
       : '/' + location.pathname.split('/')[1]
     const el = navRef.current.querySelector<HTMLElement>(`[data-navpath="${activePath}"]`)
-    if (el) {
-      setPill({ top: el.offsetTop, height: el.offsetHeight, ready: true })
-    }
+    if (el) setPill({ top: el.offsetTop, height: el.offsetHeight, ready: true })
   }, [location.pathname])
 
+  function togglePin() {
+    if (pinned) {
+      setPinned(false)
+      localStorage.setItem('dr-sidebar-pinned', 'false')
+    } else {
+      // Sidebar visible via hover — close it
+      setHovering(false)
+    }
+  }
+
   return (
-    <aside
-      className="w-[220px] shrink-0 flex flex-col py-5 px-3 relative z-10 glass"
-      style={{ borderRadius: '0 20px 20px 0', borderLeft: 'none', margin: '12px 0 12px 0' }}
-    >
-      {/* Logo */}
-      <div className="px-3 mb-8 flex items-center gap-2.5 mt-1">
-        <div className="w-7 h-7 rounded-[10px] flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-        </div>
-        <span className="font-display text-sm font-bold tracking-wide" style={{ color: 'var(--text-primary)' }}>
-          Deep<span style={{ color: 'var(--accent)' }}>Reflect</span>
-        </span>
-      </div>
+    <>
+      {/* Flex spacer — always rendered, width animates to push content */}
+      <div
+        style={{
+          width: visible ? 220 : 0,
+          flexShrink: 0,
+          transition: 'width 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      />
 
-      <div className="section-label px-3 mb-2">Navigate</div>
+      {/* Edge hover zone — thin invisible strip at left when collapsed */}
+      {!pinned && (
+        <div
+          className="fixed left-0 top-0 h-full z-40"
+          style={{ width: 18 }}
+          onMouseEnter={handleEdgeEnter}
+        />
+      )}
 
-      <nav ref={navRef} className="flex flex-col gap-1 relative">
-        {/* Liquid sliding pill — positioned behind links */}
-        {pill.ready && (
+      {/* Sidebar — always fixed so it can slide in/out smoothly */}
+      <aside
+        className="fixed flex flex-col py-5 px-3 glass z-40"
+        style={{
+          width: 220,
+          top: 12,
+          bottom: 12,
+          left: 0,
+          borderRadius: '0 20px 20px 0',
+          borderLeft: 'none',
+          transform: visible ? 'translateX(0)' : 'translateX(calc(-100% - 4px))',
+          transition: 'transform 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'transform',
+        }}
+        onMouseEnter={() => { if (!pinned) { if (hoverTimer.current) clearTimeout(hoverTimer.current); setHovering(true) } }}
+        onMouseLeave={handleSidebarLeave}
+      >
+        {/* Logo + toggle */}
+        <div className="px-3 mb-8 flex items-center gap-2.5 mt-1">
           <div
-            aria-hidden
-            className="absolute inset-x-0 pointer-events-none"
-            style={{
-              top: pill.top,
-              height: pill.height,
-              borderRadius: 14,
-              background: 'rgba(255,255,255,0.07)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
-              transition: 'top 0.42s cubic-bezier(0.34,1.56,0.64,1), height 0.3s ease',
-            }}
-          />
-        )}
-
-        {links.map(({ to, label, icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            data-navpath={to}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-[14px] text-[13px] font-medium transition-colors duration-200 group"
-            style={({ isActive }) => ({
-              color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-              background: 'transparent',
-              position: 'relative', // sit above the pill
-              zIndex: 1,
-            })}
+            className="w-7 h-7 rounded-[10px] flex items-center justify-center shrink-0"
+            style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))' }}
           >
-            {({ isActive }) => (
-              <>
-                <span
-                  className="transition-all duration-200"
-                  style={{
-                    opacity: isActive ? 1 : 0.55,
-                    transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                  }}
-                >
-                  {icon}
-                </span>
-                {label}
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </div>
+          <span className="font-display text-sm font-bold tracking-wide flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+            Deep<span style={{ color: 'var(--accent)' }}>Reflect</span>
+          </span>
 
-      <div className="mt-auto px-3 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--accent-green)' }} />
-          <span className="text-[11px]" style={{ color: 'var(--text-faint)' }}>Local agent active</span>
+          {/* Collapse / pin toggle button */}
+          <button
+            onClick={togglePin}
+            title="Collapse sidebar"
+            className="w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95 shrink-0"
+            style={{
+              background: 'var(--surface-raised)',
+              color: 'var(--text-faint)',
+              border: '1px solid var(--border-divider)',
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
         </div>
-      </div>
-    </aside>
+
+        <div className="section-label px-3 mb-2">Navigate</div>
+
+        <nav ref={navRef} className="flex flex-col gap-1 relative">
+          {/* Liquid sliding pill */}
+          {pill.ready && (
+            <div
+              aria-hidden
+              className="absolute inset-x-0 pointer-events-none"
+              style={{
+                top: pill.top,
+                height: pill.height,
+                borderRadius: 99,
+                background: 'var(--surface-pill)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                boxShadow: 'var(--tab-pill-shadow)',
+                transition: 'top 0.42s cubic-bezier(0.34,1.56,0.64,1), height 0.3s ease',
+              }}
+            />
+          )}
+
+          {links.map(({ to, label, icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              data-navpath={to}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-[14px] text-[13px] font-medium transition-colors duration-200"
+              style={({ isActive }) => ({
+                color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+                background: 'transparent',
+                position: 'relative',
+                zIndex: 1,
+              })}
+            >
+              {({ isActive }) => (
+                <>
+                  <span
+                    className="transition-all duration-200 shrink-0"
+                    style={{
+                      opacity: isActive ? 1 : 0.55,
+                      transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                    }}
+                  >
+                    {icon}
+                  </span>
+                  <span className="truncate">{label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="mt-auto px-3 pt-4" style={{ borderTop: '1px solid var(--border-divider)' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ background: 'var(--accent-green)' }} />
+            <span className="text-[11px] truncate" style={{ color: 'var(--text-faint)' }}>Local agent active</span>
+          </div>
+        </div>
+      </aside>
+    </>
   )
 }

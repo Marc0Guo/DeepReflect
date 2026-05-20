@@ -64,6 +64,22 @@ export interface Settings {
   repeat_threshold: number
   port: number
   data_dir: string
+  notify_enabled: boolean
+  notify_time: string
+  notify_channels: string[]
+  discord_webhook_url: string
+  slack_webhook_url: string
+  slack_bot_token_set: boolean
+  imessage_recipient: string
+  wechat_recipient: string
+}
+
+export interface NotificationStatus {
+  enabled: boolean
+  notify_time: string
+  channels: string[]
+  next_fire_time: string | null
+  last_sent: string | null
 }
 
 export interface HistoryItem {

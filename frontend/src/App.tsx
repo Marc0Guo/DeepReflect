@@ -12,7 +12,7 @@ const GLASS_SELECTOR = '.glass, .glass-strong, .glass-subtle, .liquid-glass'
 
 export function App() {
   useEffect(() => {
-    const saved = localStorage.getItem('dr-theme') || 'dark'
+    const saved = localStorage.getItem('dr-theme') || 'light'
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
 

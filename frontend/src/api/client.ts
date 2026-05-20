@@ -40,4 +40,9 @@ export const api = {
     get<import('../types').HistoryItem[]>(`/study/history?content_type=study_guide&limit=${limit}`),
   generateSummary: (period: import('../types').Period) =>
     `${BASE}/summary/generate/${period}`,
+  notificationStatus: () => get<import('../types').NotificationStatus>('/notifications/status'),
+  testNotification: (platform: string) =>
+    post<{ platform: string; result: string }>(`/notifications/test/${platform}`),
+  sendNotificationNow: () => post<{ results: Record<string, string> }>('/notifications/send-now'),
+  reloadSchedule: () => post('/notifications/reload-schedule'),
 }
