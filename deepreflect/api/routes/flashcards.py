@@ -11,7 +11,7 @@ from sqlmodel import select
 
 from deepreflect.agents.study_agent import generate_flashcards, generate_quiz, generate_study_guide
 from deepreflect.analysis.llm_client import LLMClient
-from deepreflect.config import load_config
+from deepreflect.config import llm_is_ready, load_config
 from deepreflect.memory.db import (
     get_content_history,
     get_flashcards,
@@ -39,8 +39,8 @@ async def list_flashcards(concept_id: int | None = None):
 @router.post("/flashcards/generate")
 async def gen_flashcards(body: GenerateFlashcardsRequest):
     cfg = load_config()
-    if not cfg.llm_api_key:
-        raise HTTPException(status_code=400, detail="LLM API key not configured")
+    if not llm_is_ready(cfg):
+        raise HTTPException(status_code=400, detail="LLM not configured. Set provider in Settings.")
     llm = LLMClient.from_config(cfg)
     with get_session(cfg.db_path) as session:
         concept: Concept | None = None
@@ -95,8 +95,8 @@ async def export_flashcards(fmt: str = "csv"):
 @router.get("/guide")
 async def study_guide(period: str = "this week"):
     cfg = load_config()
-    if not cfg.llm_api_key:
-        raise HTTPException(status_code=400, detail="LLM API key not configured")
+    if not llm_is_ready(cfg):
+        raise HTTPException(status_code=400, detail="LLM not configured. Set provider in Settings.")
     llm = LLMClient.from_config(cfg)
     with get_session(cfg.db_path) as session:
         text = await generate_study_guide(session, llm, period=period)
@@ -108,8 +108,8 @@ async def study_guide(period: str = "this week"):
 @router.get("/quiz")
 async def quiz():
     cfg = load_config()
-    if not cfg.llm_api_key:
-        raise HTTPException(status_code=400, detail="LLM API key not configured")
+    if not llm_is_ready(cfg):
+        raise HTTPException(status_code=400, detail="LLM not configured. Set provider in Settings.")
     llm = LLMClient.from_config(cfg)
     with get_session(cfg.db_path) as session:
         questions = await generate_quiz(session, llm)

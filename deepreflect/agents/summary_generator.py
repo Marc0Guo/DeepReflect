@@ -245,22 +245,24 @@ def generate_summary_html(
     )
     category_counts = _build_category_counts(all_period_concepts)
 
-    period_turns = get_turns(
+    turns_in_period = get_turns(
         session, since=layout.since, until=layout.until, limit=10_000
     )
+    period_exchange_count = len(turns_in_period)
     sources = stats.get("sources", {})
     extras = {
         "tool_count": len(sources),
-        "active_days": _active_days(period_turns, layout.since, layout.until),
+        "active_days": _active_days(turns_in_period, layout.since, layout.until),
     }
-    stats["period_turns"] = stats.get("total_turns", 0)
+    stats["period_turns"] = period_exchange_count
+    stats["total_turns"] = period_exchange_count
 
     heatmap_cells: list[str] = []
     heatmap_month_labels: list[str] = []
     if layout.show_heatmap:
         if layout.heatmap_mode == "months":
             heatmap_cells = _build_month_heatmap(
-                period_turns, layout.since, layout.until
+                turns_in_period, layout.since, layout.until
             )
             heatmap_month_labels = [
                 "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -268,7 +270,7 @@ def generate_summary_html(
             ]
         else:
             heatmap_cells = _build_day_heatmap(
-                period_turns, layout.since, layout.until, layout.heatmap_days
+                turns_in_period, layout.since, layout.until, layout.heatmap_days
             )
 
     bubble_stats = [
@@ -283,7 +285,7 @@ def generate_summary_html(
         date_range=layout.date_range,
         hero_title=layout.hero_title,
         hero_sub=layout.hero_sub,
-        period_turns=stats.get("total_turns", 0),
+        period_turns=period_exchange_count,
         stats=stats,
         bubble_stats=bubble_stats,
         concepts=concepts,

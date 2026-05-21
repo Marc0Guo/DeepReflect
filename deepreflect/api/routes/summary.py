@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 from deepreflect.agents.roast_generator import generate_roast_html
 from deepreflect.agents.summary_generator import generate_summary_html
 from deepreflect.api.dashboard_filters import dashboard_filters
-from deepreflect.config import load_config
+from deepreflect.config import llm_is_ready, load_config
 from deepreflect.memory.db import (
     DashboardFilters,
     filters_are_active,
@@ -83,8 +83,8 @@ async def generate(period: str = "weekly"):
 @router.get("/roast", response_class=HTMLResponse)
 async def roast():
     cfg = load_config()
-    if not cfg.llm_api_key:
-        raise HTTPException(status_code=400, detail="LLM API key not configured. Set it in Settings first.")
+    if not llm_is_ready(cfg):
+        raise HTTPException(status_code=400, detail="LLM not configured. Set provider in Settings first.")
     llm_client = None
     from deepreflect.analysis.llm_client import LLMClient
     llm_client = LLMClient.from_config(cfg)

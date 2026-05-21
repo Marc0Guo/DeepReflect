@@ -200,7 +200,15 @@ export function StudyPage() {
       const r = await api.studyGuide('this week')
       setGuide(r.guide)
       loadGuideHistory()
-    } catch { setGuide('**Error.** Make sure your LLM API key is configured in Settings.') }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Request failed'
+      setGuide(
+        `**Could not generate study guide.**\n\n${msg}\n\n` +
+          '- Settings: provider **ollama**, model **llama3.2**, Ollama app running\n' +
+          '- Local Ollama can take **1–2 minutes** — wait for "Generating…" to finish\n' +
+          '- Need topics asked **2+ times** (run Analysis on more conversations first)',
+      )
+    }
     setGuideLoading(false)
   }
 
@@ -374,7 +382,9 @@ export function StudyPage() {
             ) : guideLoading ? (
               <div className="glass p-10 flex flex-col items-center gap-4">
                 <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)', borderTopColor: 'var(--accent)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Generating your personalized study guide…</span>
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Generating your personalized study guide… (local Ollama may take 1–2 min)
+                </span>
               </div>
             ) : guide ? (
               <div className="glass p-8 lg:p-10"><MarkdownRenderer content={guide} /></div>

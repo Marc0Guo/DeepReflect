@@ -28,9 +28,18 @@ function buildFilterQuery(filters?: import('../types').DashboardFilters): string
   return qs ? `?${qs}` : ''
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`)
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+async function get<T>(path: string, timeoutMs = 60_000): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { signal: AbortSignal.timeout(timeoutMs) })
+  if (!res.ok) {
+    let message = `${res.status} ${res.statusText}`
+    try {
+      const err = (await res.json()) as { detail?: string }
+      if (typeof err.detail === 'string') message = err.detail
+    } catch {
+      /* ignore */
+    }
+    throw new Error(message)
+  }
   return res.json()
 }
 
@@ -92,8 +101,9 @@ export const api = {
       limit,
       ...(conceptId != null ? { concept_id: conceptId } : {}),
     }),
-  studyGuide: (period = 'this week') => get<{ guide: string }>(`/study/guide?period=${period}`),
-  quiz: () => get<{ questions: import('../types').QuizQuestion[] }>('/study/quiz'),
+  studyGuide: (period = 'this week') =>
+    get<{ guide: string }>(`/study/guide?period=${encodeURIComponent(period)}`, 180_000),
+  quiz: () => get<{ questions: import('../types').QuizQuestion[] }>('/study/quiz', 180_000),
   analyzeBounds: () => get<import('../types').AnalyzeBounds>('/analyze/bounds'),
   analyze: (selection: import('../types').AnalyzeSelection) => {
     const p = buildAnalyzeParams(selection)

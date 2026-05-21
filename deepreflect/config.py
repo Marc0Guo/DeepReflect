@@ -55,3 +55,8 @@ def save_config(cfg: Config) -> None:
 def ensure_dirs(cfg: Config) -> None:
     Path(cfg.data_dir).mkdir(parents=True, exist_ok=True)
     cfg.summaries_dir.mkdir(parents=True, exist_ok=True)
+
+
+def llm_is_ready(cfg: Config) -> bool:
+    """Ollama runs locally and does not need an API key."""
+    return cfg.llm_provider == "ollama" or bool(cfg.llm_api_key)

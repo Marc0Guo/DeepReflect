@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from deepreflect.analysis.llm_client import LLMClient
 from deepreflect.analysis.domains import backfill_domain_mentions, record_turn_tags
 from deepreflect.analysis.tagger import tag_turn
-from deepreflect.config import load_config
+from deepreflect.config import llm_is_ready, load_config
 from deepreflect.memory.db import (
     clear_analysis,
     count_unanalyzed_turns,
@@ -169,10 +169,10 @@ async def run_analysis(
     limit: Optional[int] = Query(None, ge=1),
 ):
     cfg = load_config()
-    if not cfg.llm_api_key:
+    if not llm_is_ready(cfg):
         raise HTTPException(
             status_code=400,
-            detail="LLM API key not configured. Set it in Settings first.",
+            detail="LLM not configured. Set provider in Settings first.",
         )
 
     since_dt, until_dt = _resolve_since_until(since, until, period)
@@ -209,10 +209,10 @@ async def analyze_stream(
     limit: Optional[int] = Query(None, ge=1),
 ):
     cfg = load_config()
-    if not cfg.llm_api_key:
+    if not llm_is_ready(cfg):
         raise HTTPException(
             status_code=400,
-            detail="LLM API key not configured. Set it in Settings first.",
+            detail="LLM not configured. Set provider in Settings first.",
         )
 
     since_dt, until_dt = _resolve_since_until(since, until, period)
