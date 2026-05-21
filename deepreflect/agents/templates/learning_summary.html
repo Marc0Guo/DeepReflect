@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>DeepReflect — {{ period_label }} Summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --ink: #2a2340; --ink-soft: #6b6280;
+    --bg1: #e8f7ff; --bg2: #fff6e8; --hi: #fff066;
+    --pop: #ff4d8d; --pop2: #7c5cff;
+    --mint: #b8f5e4; --lemon: #fff3a8; --coral: #ffd4e8;
+    --sky: #c8e4ff; --lilac: #e4d4ff; --orange: #ffd9b8;
+    --heat-0: #f3f3f3; --heat-1: #ffc9c9; --heat-2: #ff8a8a;
+    --heat-3: #ef4444; --heat-4: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: 17px; line-height: 1.5; color: var(--ink);
+    padding: 28px 0 100px;
+    background: linear-gradient(160deg, var(--bg1) 0%, #f5eeff 45%, var(--bg2) 100%);
+    background-attachment: fixed;
+  }
+  .page { width: 900px; margin: 0 auto; padding: 0 28px 40px; position: relative; }
+  .page::before {
+    content: ''; position: absolute; inset: -20px; opacity: 0.35; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(circle, var(--pop) 2px, transparent 2.5px),
+      radial-gradient(circle, var(--pop2) 1.5px, transparent 2px),
+      radial-gradient(circle, #ffd166 2px, transparent 2.5px);
+    background-size: 120px 80px, 90px 70px, 140px 100px;
+  }
+  .page > * { position: relative; z-index: 1; }
+
+  .party-header { text-align: center; padding: 36px 20px 28px; position: relative; }
+  .party-header .ribbon {
+    display: inline-block; background: var(--pop2); color: #fff;
+    font-family: 'Fredoka', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 6px 18px; border-radius: 999px; transform: rotate(-2deg);
+    box-shadow: 0 4px 0 rgba(124, 92, 255, 0.35); margin-bottom: 10px;
+  }
+  .party-header .brand {
+    margin: 0; font-family: 'Fredoka', sans-serif; font-size: 20px;
+    letter-spacing: 0.12em; color: var(--pop2); text-transform: uppercase;
+  }
+  .party-header h1 {
+    margin: 8px 0 0; font-family: 'Fredoka', sans-serif;
+    font-size: 52px; line-height: 1.08; color: var(--pop2);
+    text-shadow: 3px 3px 0 var(--lemon), 6px 6px 0 rgba(124, 92, 255, 0.15);
+  }
+  .party-header .tagline { margin: 12px 0 0; font-size: 17px; color: var(--ink-soft); font-weight: 600; }
+  .party-header .sub { margin: 6px 0 0; font-size: 14px; color: var(--pop); font-weight: 700; }
+
+  .highlight-block {
+    text-align: center; padding: 28px 24px; margin-bottom: 22px;
+    background: var(--lemon); border: 2px solid var(--ink); border-radius: 20px;
+    box-shadow: 6px 8px 0 rgba(42, 35, 64, 0.08); transform: rotate(-0.4deg);
+  }
+  .highlight-block .big-num {
+    font-family: 'Fredoka', sans-serif; font-size: 72px; line-height: 1; color: var(--pop2);
+  }
+  .highlight-block .big-label {
+    font-family: 'Fredoka', sans-serif; font-size: 18px; font-weight: 600; margin-top: 8px;
+  }
+  .highlight-block .big-sub { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+
+  .stat-bubbles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .bubble {
+    text-align: center; padding: 16px 10px; border-radius: 18px; border: 2px solid var(--ink);
+    box-shadow: 4px 5px 0 rgba(42, 35, 64, 0.1); transform: rotate(var(--r, 0deg));
+  }
+  .bubble:nth-child(1) { background: var(--mint); --r: -2deg; }
+  .bubble:nth-child(2) { background: var(--sky); --r: 1.5deg; }
+  .bubble:nth-child(3) { background: var(--coral); --r: -1deg; }
+  .bubble:nth-child(4) { background: var(--lilac); --r: 2deg; }
+  .bubble .n { font-family: 'Fredoka', sans-serif; font-size: 32px; line-height: 1; color: var(--pop2); }
+  .bubble .k {
+    font-size: 11px; font-weight: 700; color: var(--ink-soft); margin-top: 6px;
+    line-height: 1.2; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+
+  .tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Fredoka', sans-serif; font-size: 22px; font-weight: 600;
+    background: #fff; border: 2px solid var(--ink); border-radius: 12px 12px 0 0;
+    padding: 8px 16px; margin-bottom: -2px; position: relative; z-index: 2;
+  }
+  .block {
+    padding: 20px 22px; border: 2px solid var(--ink); border-radius: 0 20px 20px 20px;
+    margin-bottom: 22px; box-shadow: 6px 8px 0 rgba(42, 35, 64, 0.08); position: relative;
+  }
+  .block.mint { background: var(--mint); transform: rotate(-0.5deg); }
+  .block.sky { background: var(--sky); transform: rotate(0.5deg); }
+  .block.lilac { background: var(--lilac); transform: rotate(-0.6deg); }
+  .block.coral { background: var(--coral); transform: rotate(0.4deg); }
+  .block.orange { background: var(--orange); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 14px; font-weight: 700; padding: 6px 14px; background: #fff;
+    border: 2px solid var(--ink); border-radius: 999px;
+  }
+  .chip .cnt { color: var(--pop2); font-family: 'Fredoka', sans-serif; }
+
+  .cat-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(42, 35, 64, 0.15); }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1px solid var(--ink); }
+  .cat-name { font-size: 15px; font-weight: 700; flex: 1; text-transform: capitalize; }
+  .cat-bar-wrap { width: 140px; }
+  .cat-bar-track {
+    height: 12px; background: rgba(255,255,255,.65); border: 2px solid var(--ink);
+    border-radius: 999px; overflow: hidden;
+  }
+  .cat-bar-fill { height: 100%; border-radius: 999px; }
+  .cat-count { font-family: 'Fredoka', sans-serif; font-size: 12px; color: var(--ink-soft); text-align: right; margin-top: 4px; }
+
+  .heatmap-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+  .heatmap-grid.months { gap: 8px; }
+  .heatmap-cell {
+    width: 14px; height: 14px; border-radius: 4px;
+    background: var(--heat-0); border: 1px solid rgba(42, 35, 64, 0.08);
+  }
+  .heatmap-grid.months .heatmap-cell { width: 52px; height: 36px; border-radius: 8px; }
+  .month-labels { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .month-labels span {
+    width: 52px; text-align: center; font-size: 10px; font-weight: 700;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+  .heatmap-cell.l1 { background: var(--heat-1); }
+  .heatmap-cell.l2 { background: var(--heat-2); }
+  .heatmap-cell.l3 { background: var(--heat-3); }
+  .heatmap-cell.l4 { background: var(--heat-4); }
+  .heatmap-legend { display: flex; align-items: center; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  .heatmap-legend span { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+
+  .concept-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px dashed rgba(42, 35, 64, 0.15); }
+  .concept-item:last-child { border-bottom: none; }
+  .rank {
+    font-family: 'Fredoka', sans-serif; font-size: 28px; font-weight: 700;
+    width: 40px; text-align: center; flex-shrink: 0; line-height: 1;
+  }
+  .rank.r1 { color: var(--pop); }
+  .rank.r2 { color: var(--pop2); }
+  .rank.r3 { color: #ffd166; }
+  .rank.rn { color: var(--ink-soft); font-size: 20px; }
+  .c-info { flex: 1; min-width: 0; }
+  .c-name {
+    font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .c-meta { font-size: 12px; color: var(--ink-soft); margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .c-tag {
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    background: #fff; border: 1px solid var(--ink); text-transform: uppercase;
+  }
+  .weak-tag {
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    background: var(--coral); color: var(--pop); border: 1px solid var(--pop);
+  }
+  .c-bar-wrap { width: 100px; flex-shrink: 0; }
+  .c-bar-track {
+    height: 10px; background: rgba(255,255,255,.65); border: 2px solid var(--ink);
+    border-radius: 999px; overflow: hidden;
+  }
+  .c-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--pop), var(--pop2)); }
+  .c-count { font-family: 'Fredoka', sans-serif; font-size: 11px; color: var(--ink-soft); text-align: right; margin-top: 4px; }
+
+  .spotlight {
+    text-align: center; padding: 28px 24px;
+    background: linear-gradient(135deg, var(--pop2) 0%, var(--pop) 100%);
+    color: #fff; border-radius: 24px; border: 3px solid var(--ink);
+    box-shadow: 8px 10px 0 rgba(42, 35, 64, 0.12); transform: rotate(-0.5deg); margin-bottom: 22px;
+  }
+  .spotlight .spot-label {
+    font-family: 'Fredoka', sans-serif; font-size: 12px; letter-spacing: 0.12em;
+    text-transform: uppercase; opacity: 0.9; margin-bottom: 10px;
+  }
+  .spotlight .top-name {
+    font-family: 'Fredoka', sans-serif; font-size: 32px; font-weight: 700; line-height: 1.15;
+  }
+  .spotlight .top-sub { font-size: 14px; margin-top: 8px; opacity: 0.92; }
+
+  .footer-card {
+    padding: 22px; background: #fff; border: 2px solid var(--ink);
+    border-radius: 20px; text-align: center; transform: rotate(0.4deg);
+  }
+  .footer-card .brand {
+    font-family: 'Fredoka', sans-serif; font-size: 18px; font-weight: 700; color: var(--pop2);
+  }
+  .footer-card .date { margin-top: 8px; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+  .footer-card .tag {
+    margin-top: 10px; font-size: 14px; font-style: italic; color: var(--ink-soft);
+  }
+
+  .export-bar { position: fixed; bottom: 20px; right: 20px; z-index: 99; }
+  .export-bar button {
+    font-family: 'Fredoka', sans-serif; font-size: 15px; padding: 12px 22px;
+    border-radius: 999px; border: 2px solid var(--ink); background: var(--lemon); cursor: pointer;
+    box-shadow: 4px 6px 0 rgba(42, 35, 64, 0.15);
+  }
+  @media print { .export-bar { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="page" id="report-page">
+
+  <header class="party-header">
+    <span class="ribbon">📊 {{ period_label }} learning wrap</span>
+    <p class="brand">DeepReflect</p>
+    <h1>Your Learning<br>Journey</h1>
+    <p class="tagline">{{ date_range }}</p>
+    <p class="sub">(stats from your imported AI chats — same vibe, zero corporate PDF)</p>
+  </header>
+
+  <div class="highlight-block">
+    <div class="big-num">{{ period_turns }}</div>
+    <div class="big-label">{{ hero_title }}</div>
+    <div class="big-sub">{{ hero_sub }}</div>
+  </div>
+
+  <div class="stat-bubbles">
+    {% for b in bubble_stats %}
+    <div class="bubble"><div class="n">{{ b.n }}</div><div class="k">{{ b.k }}</div></div>
+    {% endfor %}
+  </div>
+
+  {% if sources %}
+  <div class="tab">🤖 AI tools used</div>
+  <div class="block mint">
+    <div class="chips">
+      {% for src, cnt in sources.items() %}
+      <span class="chip">{{ src }} <span class="cnt">{{ cnt }}</span></span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if category_counts %}
+  <div class="tab">📚 Knowledge by category</div>
+  <div class="block lilac">
+    {% set max_cat = category_counts[0][1] %}
+    {% for cat, cnt in category_counts %}
+    <div class="cat-row">
+      <div class="cat-dot" style="background: {{ cat_colors.get(cat, '#94a3b8') }}"></div>
+      <div class="cat-name">{{ cat }}</div>
+      <div class="cat-bar-wrap">
+        <div class="cat-bar-track">
+          <div class="cat-bar-fill" style="width: {{ (cnt / max_cat * 100)|int }}%; background: {{ cat_colors.get(cat, '#94a3b8') }}"></div>
+        </div>
+        <div class="cat-count">{{ cnt }}×</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if show_heatmap and heatmap_cells %}
+  <div class="tab">📅 {{ heatmap_title }}</div>
+  <div class="block sky">
+    <div class="heatmap-grid{% if heatmap_mode == 'months' %} months{% endif %}">
+      {% for cell in heatmap_cells %}
+      <div class="heatmap-cell {{ cell }}"></div>
+      {% endfor %}
+    </div>
+    {% if heatmap_mode == 'months' and heatmap_month_labels %}
+    <div class="month-labels">
+      {% for m in heatmap_month_labels %}<span>{{ m }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="heatmap-legend">
+      <span>Less</span>
+      <div class="heatmap-cell"></div>
+      <div class="heatmap-cell l1"></div>
+      <div class="heatmap-cell l2"></div>
+      <div class="heatmap-cell l3"></div>
+      <div class="heatmap-cell l4"></div>
+      <span>More</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if concepts %}
+  <div class="tab">🏆 Top topics</div>
+  <div class="block orange">
+    {% set max_c = concepts[0].ask_count %}
+    {% for c in concepts %}
+    <div class="concept-item">
+      <span class="rank {% if loop.index == 1 %}r1{% elif loop.index == 2 %}r2{% elif loop.index == 3 %}r3{% else %}rn{% endif %}">{{ loop.index }}</span>
+      <div class="c-info">
+        <div class="c-name">{{ c.name }}</div>
+        <div class="c-meta">
+          <span class="c-tag">{{ c.category }}</span>
+          {% if c.weak_score >= 0.4 %}<span class="weak-tag">needs review</span>{% endif %}
+        </div>
+      </div>
+      <div class="c-bar-wrap">
+        <div class="c-bar-track">
+          <div class="c-bar-fill" style="width: {{ (c.ask_count / max_c * 100)|int }}%"></div>
+        </div>
+        <div class="c-count">{{ c.ask_count }}×</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if concepts|length >= 1 %}
+  <div class="spotlight">
+    <div class="spot-label">✨ Your #1 topic</div>
+    <div class="top-name">{{ concepts[0].name }}</div>
+    <div class="top-sub">Asked {{ concepts[0].ask_count }} times · {{ concepts[0].category }}</div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <div class="footer-card">
+    <p class="brand">DeepReflect</p>
+    <p class="date">Generated {{ generated_at }}</p>
+    <p class="tag">Your AI usage, mapped into knowledge.</p>
+  </div>
+
+</div>
+
+<div class="export-bar" id="export-bar">
+  <button type="button" id="save-png">📸 Save as PNG</button>
+</div>
+
+<script>
+document.getElementById('save-png').addEventListener('click', async () => {
+  if (typeof html2canvas !== 'function') { alert('html2canvas not loaded'); return }
+  const bar = document.getElementById('export-bar');
+  bar.style.display = 'none';
+  if (document.fonts?.ready) await document.fonts.ready;
+  const target = document.getElementById('report-page');
+  const canvas = await html2canvas(target, { backgroundColor:'#e8f7ff', scale:2, useCORS:true, logging:false, windowWidth:956 });
+  const link = document.createElement('a');
+  link.download = 'deepreflect-{{ period_label|lower }}-summary.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  bar.style.display = '';
+});
+</script>
+</body>
+</html>

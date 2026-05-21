@@ -15,12 +15,14 @@ export interface GraphNode {
   ask_count: number
   weak_score: number
   last_seen: string | null
+  node_type?: 'domain' | 'topic'
 }
 
 export interface GraphEdge {
   source: string
   target: string
   weight: number
+  edge_type?: 'hub' | 'peer' | 'cross'
 }
 
 export interface GraphData {
@@ -212,8 +214,6 @@ export interface Settings {
   llm_api_key_set: boolean
   llm_model: string
   llm_base_url: string
-  intervention_tone: string
-  repeat_threshold: number
   port: number
   data_dir: string
   notify_enabled: boolean
@@ -222,8 +222,6 @@ export interface Settings {
   discord_webhook_url: string
   slack_webhook_url: string
   slack_bot_token_set: boolean
-  imessage_recipient: string
-  wechat_recipient: string
 }
 
 export interface NotificationStatus {

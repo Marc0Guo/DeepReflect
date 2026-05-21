@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from deepreflect.analysis.domains import backfill_domain_mentions
 from deepreflect.analysis.graph import build_graph, graph_to_json
 from deepreflect.api.dashboard_filters import dashboard_filters
 from deepreflect.config import load_config
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/graph", tags=["graph"])
 async def get_graph():
     cfg = load_config()
     with get_session(cfg.db_path) as session:
+        backfill_domain_mentions(session)
         G = build_graph(session)
         return graph_to_json(G)
 

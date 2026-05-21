@@ -1,0 +1,36 @@
+{
+  "name": "deepreflect-chat-history-roast-skill",
+  "version": "0.1.0",
+  "description": "Vibe Roast — Cursor Agent Skill for playful AI chat history HTML reports (zh/en)",
+  "license": "MIT",
+  "keywords": [
+    "vibe-roast",
+    "cursor",
+    "agent-skill",
+    "claude-code",
+    "chatgpt",
+    "roast",
+    "developer-humor"
+  ],
+  "files": [
+    "LICENSE",
+    "SKILL.md",
+    "README.md",
+    "README.zh.md",
+    "recipes",
+    "examples",
+    "scripts"
+  ],
+  "bin": {
+    "chat-history-roast-skill": "./scripts/cli.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js",
+    "install-skill": "node scripts/install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Marc0Guo/DeepReflect.git",
+    "directory": "skills/chat-history-roast"
+  }
+}

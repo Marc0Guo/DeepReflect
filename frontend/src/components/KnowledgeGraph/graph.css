@@ -1,0 +1,66 @@
+/* Obsidian-style force-directed knowledge graph */
+
+.obsidian-graph {
+  background: transparent;
+}
+
+/* ── Edges ──────────────────────────────────────────────────────────────── */
+.edge {
+  transition: stroke-opacity 0.2s ease;
+}
+
+.edge--dim {
+  stroke-opacity: 0.04 !important;
+}
+
+.edge--hi {
+  stroke-opacity: 0.85 !important;
+  stroke-width: 2px !important;
+}
+
+/* ── Nodes ──────────────────────────────────────────────────────────────── */
+.node {
+  transition: opacity 0.18s ease;
+}
+
+.node--dim {
+  opacity: 0.12;
+}
+
+.node--hi {
+  opacity: 1;
+}
+
+.node--topic .node__circle {
+  transition: fill-opacity 0.15s ease, stroke-opacity 0.15s ease, r 0.15s ease;
+}
+
+.node--topic:hover .node__circle {
+  fill-opacity: 0.32 !important;
+  stroke-opacity: 1 !important;
+  filter: url(#glow-hi);
+}
+
+.node--domain .node__circle {
+  filter: url(#glow-hi);
+}
+
+.node__label {
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  user-select: none;
+  pointer-events: none;
+  /* Halo behind text so it's readable on any background */
+  paint-order: stroke fill;
+  stroke: var(--bg, #ffffff);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+/* ── HUD overlay ────────────────────────────────────────────────────────── */
+.graph-hud {
+  background: color-mix(in srgb, var(--surface, #0f172a) 70%, transparent);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--glass-border, #ffffff20) 60%, transparent);
+  border-radius: 12px;
+  pointer-events: none;
+}

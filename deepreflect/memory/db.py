@@ -728,6 +728,26 @@ def get_content_history(
     return list(session.exec(stmt))
 
 
+def clear_analysis(session: Session) -> dict[str, int]:
+    """Clear topic tags and knowledge graph data; keep imported conversations."""
+    counts: dict[str, int] = {}
+    for model, key in [
+        (ConceptMention, "mentions"),
+        (Flashcard, "flashcards"),
+        (Concept, "concepts"),
+    ]:
+        result = session.exec(delete(model))
+        counts[key] = result.rowcount  # type: ignore[attr-defined]
+
+    turns = list(session.exec(select(ConversationTurn)))
+    for turn in turns:
+        turn.analyzed = False
+        session.add(turn)
+    counts["turns_reset"] = len(turns)
+    session.commit()
+    return counts
+
+
 def clear_memory(session: Session) -> dict[str, int]:
     """Remove all imported conversations, concepts, and derived study content."""
     counts: dict[str, int] = {}

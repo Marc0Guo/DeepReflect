@@ -22,6 +22,7 @@ env/
 # Frontend dependencies
 frontend/node_modules/
 node_modules/
+skills/**/node_modules/
 
 # Frontend build output
 frontend/dist/

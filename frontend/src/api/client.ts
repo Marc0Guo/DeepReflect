@@ -77,6 +77,8 @@ export const api = {
       `/summary/thread-turns?session_id=${encodeURIComponent(sessionId)}&source=${encodeURIComponent(source)}&limit=${limit}`,
     ),
   graph: () => get<import('../types').GraphData>('/graph'),
+  resetAnalysis: () =>
+    post<{ cleared: Record<string, number>; message: string }>('/analyze/reset'),
   concepts: (minAsk = 1, filters?: import('../types').DashboardFilters) => {
     const p = new URLSearchParams({ min_ask_count: String(minAsk) })
     appendFilterParams(p, filters)

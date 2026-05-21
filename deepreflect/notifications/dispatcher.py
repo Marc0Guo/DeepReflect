@@ -56,6 +56,8 @@ async def dispatch_notification(cfg: Config) -> dict[str, str]:
     results: dict[str, str] = {}
 
     for channel in cfg.notify_channels:
+        if channel not in ("discord", "slack"):
+            continue
         try:
             if channel == "discord":
                 if not cfg.discord_webhook_url:
@@ -77,30 +79,6 @@ async def dispatch_notification(cfg: Config) -> dict[str, str]:
                     cfg.slack_bot_token,
                     image_bytes or b"",
                 )
-
-            elif channel == "imessage":
-                if not cfg.imessage_recipient:
-                    results[channel] = "error: recipient not configured"
-                    continue
-                from deepreflect.notifications.platforms import imessage_platform
-                caption = "Your DeepReflect daily roast is ready 🔥"
-                await imessage_platform.send(
-                    cfg.imessage_recipient,
-                    image_path=html_path.with_suffix(".png") if image_bytes else None,
-                    text=caption,
-                )
-                # Save PNG alongside HTML for iMessage attachment
-                if image_bytes:
-                    png_path = html_path.with_suffix(".png")
-                    png_path.write_bytes(image_bytes)
-
-            elif channel == "wechat":
-                if not cfg.wechat_recipient:
-                    results[channel] = "error: contact name not configured"
-                    continue
-                from deepreflect.notifications.platforms import wechat_platform
-                summary_text = "🔥 Your DeepReflect Daily Roast is ready! Open the dashboard to see your brutal honest score."
-                await wechat_platform.send(cfg.wechat_recipient, summary_text)
 
             else:
                 results[channel] = f"error: unknown channel '{channel}'"

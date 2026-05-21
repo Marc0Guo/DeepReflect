@@ -49,7 +49,7 @@ async def test_platform(platform: str):
     if not cfg.llm_api_key and cfg.llm_provider != "ollama":
         raise HTTPException(status_code=400, detail="LLM API key not configured.")
 
-    valid = {"discord", "slack", "imessage", "wechat"}
+    valid = {"discord", "slack"}
     if platform not in valid:
         raise HTTPException(status_code=400, detail=f"Unknown platform. Choose from: {valid}")
 

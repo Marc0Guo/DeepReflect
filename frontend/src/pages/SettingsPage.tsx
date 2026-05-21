@@ -4,7 +4,6 @@ import { api } from '../api/client'
 import type { NotificationStatus, Settings } from '../types'
 
 const PROVIDERS = ['openai', 'anthropic', 'ollama', 'openrouter'] as const
-const TONES = ['friendly', 'strict', 'funny'] as const
 
 type ModelGroup = { group: string; models: string[] }
 
@@ -259,8 +258,6 @@ export function SettingsPage() {
     llm_api_key: '',
     llm_model: 'gpt-4o-mini',
     llm_base_url: '',
-    intervention_tone: 'friendly',
-    repeat_threshold: 3,
     // Notification fields
     notify_enabled: false,
     notify_time: '21:00',
@@ -268,8 +265,6 @@ export function SettingsPage() {
     discord_webhook_url: '',
     slack_webhook_url: '',
     slack_bot_token: '',
-    imessage_recipient: '',
-    wechat_recipient: '',
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -292,12 +287,10 @@ export function SettingsPage() {
         repeat_threshold: s.repeat_threshold,
         notify_enabled: s.notify_enabled ?? false,
         notify_time: s.notify_time ?? '21:00',
-        notify_channels: s.notify_channels ?? [],
+        notify_channels: (s.notify_channels ?? []).filter((c) => c === 'discord' || c === 'slack'),
         discord_webhook_url: s.discord_webhook_url ?? '',
         slack_webhook_url: s.slack_webhook_url ?? '',
         slack_bot_token: '',
-        imessage_recipient: s.imessage_recipient ?? '',
-        wechat_recipient: s.wechat_recipient ?? '',
       })
       if (ns) setNotifStatus(ns)
       setLoading(false)
@@ -318,15 +311,11 @@ export function SettingsPage() {
         llm_provider: form.llm_provider,
         llm_model: form.llm_model,
         llm_base_url: form.llm_base_url,
-        intervention_tone: form.intervention_tone,
-        repeat_threshold: form.repeat_threshold,
         notify_enabled: form.notify_enabled,
         notify_time: form.notify_time,
-        notify_channels: form.notify_channels,
+        notify_channels: form.notify_channels.filter((c) => c === 'discord' || c === 'slack'),
         discord_webhook_url: form.discord_webhook_url,
         slack_webhook_url: form.slack_webhook_url,
-        imessage_recipient: form.imessage_recipient,
-        wechat_recipient: form.wechat_recipient,
       }
       if (form.llm_api_key.trim()) payload.llm_api_key = form.llm_api_key.trim()
       if (form.slack_bot_token.trim()) payload.slack_bot_token = form.slack_bot_token.trim()
@@ -355,11 +344,9 @@ export function SettingsPage() {
     await api.saveSettings({
       notify_enabled: form.notify_enabled,
       notify_time: form.notify_time,
-      notify_channels: form.notify_channels,
+      notify_channels: form.notify_channels.filter((c) => c === 'discord' || c === 'slack'),
       discord_webhook_url: form.discord_webhook_url.trim(),
       slack_webhook_url: form.slack_webhook_url.trim(),
-      imessage_recipient: form.imessage_recipient.trim(),
-      wechat_recipient: form.wechat_recipient.trim(),
     })
   }
 
@@ -487,47 +474,8 @@ export function SettingsPage() {
         </Field>
       </div>
 
-      {/* COACH */}
-      <div className="glass p-6 space-y-5 animate-fade-in-up stagger-2">
-        <div className="section-label">Coach Behavior</div>
-
-        <Field label="Intervention Tone"
-          hint="How the coach addresses you when it detects repeated questions.">
-          <div className="flex gap-2">
-            {TONES.map((t) => (
-              <button key={t} type="button" onClick={() => setForm((f) => ({ ...f, intervention_tone: t }))}
-                className="flex-1 py-2 text-[12px] font-semibold rounded-[10px] transition-all cursor-pointer capitalize"
-                style={{
-                  background: form.intervention_tone === t
-                    ? 'color-mix(in srgb, var(--accent-warm) 15%, transparent)'
-                    : 'var(--surface-raised)',
-                  color: form.intervention_tone === t ? 'var(--accent-warm)' : 'var(--text-muted)',
-                  border: form.intervention_tone === t
-                    ? '1px solid color-mix(in srgb, var(--accent-warm) 30%, transparent)'
-                    : '1px solid var(--glass-border)',
-                }}>
-                {t === 'friendly' ? '😊 Friendly' : t === 'strict' ? '🎯 Strict' : '😂 Funny'}
-              </button>
-            ))}
-          </div>
-        </Field>
-
-        <Field label="Repeat Threshold"
-          hint="Trigger an intervention after asking about the same concept this many times.">
-          <div className="flex items-center gap-4">
-            <input type="range" min={1} max={10} value={form.repeat_threshold}
-              onChange={(e) => setForm((f) => ({ ...f, repeat_threshold: Number(e.target.value) }))}
-              className="flex-1" />
-            <span className="font-display text-xl font-bold w-8 text-center"
-              style={{ color: 'var(--accent)' }}>
-              {form.repeat_threshold}
-            </span>
-          </div>
-        </Field>
-      </div>
-
       {/* NOTIFICATIONS */}
-      <div className="glass p-6 space-y-5 animate-fade-in-up stagger-3">
+      <div className="glass p-6 space-y-5 animate-fade-in-up stagger-2">
         <div className="flex items-center justify-between">
           <div className="section-label">Daily Notifications</div>
           {/* Enable toggle */}
@@ -595,21 +543,6 @@ export function SettingsPage() {
               { key: 'slack_webhook_url' as const, label: 'Incoming Webhook URL', placeholder: 'https://hooks.slack.com/services/…' },
               { key: 'slack_bot_token' as const, label: 'Bot Token (optional, for image)', placeholder: 'xoxb-… (needs files:write scope)' },
             ],
-          },
-          {
-            key: 'imessage',
-            label: 'iMessage (macOS)',
-            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-            color: '--accent-green',
-            fields: [{ key: 'imessage_recipient' as const, label: 'Phone or Apple ID email', placeholder: '+1 555 000 0000' }],
-          },
-          {
-            key: 'wechat',
-            label: 'WeChat (experimental)',
-            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-secondary)" style={{ flexShrink: 0 }}><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-7.062-6.122zm-3.855 3.253c.535 0 .969.44.969.983a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.983.969-.983zm3.965 0c.535 0 .969.44.969.983a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.983.969-.983z"/></svg>,
-            color: '--accent-secondary',
-            fields: [{ key: 'wechat_recipient' as const, label: 'Contact display name in WeChat', placeholder: 'e.g. 张三 (exact name in WeChat)' }],
-            warning: '⚠️ Experimental — requires WeChat desktop running on macOS. Text only, no image.',
           },
         ].map((ch) => {
           const active = form.notify_channels.includes(ch.key)
@@ -698,7 +631,7 @@ export function SettingsPage() {
       </div>
 
       {/* SAVE */}
-      <div className="flex items-center gap-4 animate-fade-in-up stagger-4">
+      <div className="flex items-center gap-4 animate-fade-in-up stagger-3">
         <button type="button" onClick={save} disabled={saving}
           className="flex-1 py-3 text-[13px] font-semibold rounded-[14px] transition-all disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
           style={{
@@ -723,7 +656,7 @@ export function SettingsPage() {
 
       {/* INFO */}
       {settings && (
-        <div className="glass-subtle p-5 rounded-[16px] space-y-2 animate-fade-in-up stagger-5">
+        <div className="glass-subtle p-5 rounded-[16px] space-y-2 animate-fade-in-up stagger-4">
           <div className="section-label mb-3">System Info</div>
           {[['Data directory', settings.data_dir], ['Server port', String(settings.port)]].map(([k, v]) => (
             <div key={k} className="flex items-start justify-between gap-4 text-[12px]">

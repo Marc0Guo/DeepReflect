@@ -25,7 +25,7 @@ async def html_to_png(html_path: Path, element_selector: str = "#report-page") -
                 "Chromium browser not found. Run: playwright install chromium"
             ) from exc
 
-        page = await browser.new_page(viewport={"width": 520, "height": 900})
+        page = await browser.new_page(viewport={"width": 960, "height": 1200})
         try:
             await page.goto(f"file://{html_path.resolve()}", wait_until="domcontentloaded")
             # Brief pause for web fonts / layout (file:// never reaches networkidle with external fonts).

@@ -31,7 +31,8 @@ def config(
     model: Optional[str] = typer.Option(None, "--model", help="Model name"),
     base_url: Optional[str] = typer.Option(None, "--base-url", help="Custom API base URL"),
     port: Optional[int] = typer.Option(None, "--port", help="Server port (default 7733)"),
-    tone: Optional[str] = typer.Option(None, "--tone", help="Coach tone: strict|friendly|funny"),
+    tone: Optional[str] = typer.Option(None, "--tone", help="Coach tone: strict|friendly|funny (Claude Code hook)"),
+    threshold: Optional[int] = typer.Option(None, "--threshold", help="Repeat count before coach intervention (hook)"),
     show: bool = typer.Option(False, "--show", help="Show current config"),
 ):
     """Configure DeepReflect settings."""
@@ -44,6 +45,7 @@ def config(
         table.add_row("api_key", cfg.llm_api_key[:8] + "..." if cfg.llm_api_key else "(not set)")
         table.add_row("port", str(cfg.port))
         table.add_row("tone", cfg.intervention_tone)
+        table.add_row("threshold", str(cfg.repeat_threshold))
         table.add_row("base_url", cfg.llm_base_url or "(default)")
         table.add_row("data_dir", cfg.data_dir)
         console.print(table)
@@ -61,6 +63,8 @@ def config(
         cfg.port = port
     if tone:
         cfg.intervention_tone = tone
+    if threshold is not None:
+        cfg.repeat_threshold = max(1, min(10, threshold))
 
     save_config(cfg)
     console.print("[green]Config saved.[/green]")
@@ -211,12 +215,25 @@ def check_intervention(
 # ── Analyze ──────────────────────────────────────────────────────────────────
 
 
+@app.command("reset-analysis")
+def reset_analysis():
+    """Clear topic tags and knowledge graph; keep imported conversations."""
+    from deepreflect.memory.db import clear_analysis, get_session
+
+    cfg = load_config()
+    with get_session(cfg.db_path) as session:
+        cleared = clear_analysis(session)
+    console.print("[green]Analysis cleared:[/green]", cleared)
+    console.print("Run [bold]deepreflect analyze[/bold] or Dashboard → Run Analysis to rebuild.")
+
+
 @app.command()
 def analyze(limit: int = typer.Option(50, "--limit", help="Max turns to analyze")):
     """Analyze unprocessed conversations and extract concepts."""
     from deepreflect.analysis.llm_client import LLMClient
+    from deepreflect.analysis.domains import record_turn_tags
     from deepreflect.analysis.tagger import tag_turn
-    from deepreflect.memory.db import get_or_create_concept, get_session, get_unanalyzed_turns, record_mention
+    from deepreflect.memory.db import get_session, get_unanalyzed_turns
 
     cfg = load_config()
     if not cfg.llm_api_key:
@@ -234,9 +251,7 @@ def analyze(limit: int = typer.Option(50, "--limit", help="Max turns to analyze"
             console.print(f"Analyzing {len(turns)} turns...")
             for i, turn in enumerate(turns):
                 concepts, category = await tag_turn(turn, llm)
-                for name in concepts:
-                    concept = get_or_create_concept(session, name, category)
-                    record_mention(session, turn, concept)
+                record_turn_tags(session, turn, concepts, category)
                 turn.analyzed = True
                 session.add(turn)
                 session.commit()

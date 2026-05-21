@@ -1,22 +1,59 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { GraphView } from '../components/KnowledgeGraph/GraphView'
+import { GraphLegend, GraphView } from '../components/KnowledgeGraph/GraphView'
 import type { ConversationTurn, GraphData } from '../types'
 
 export function GraphPage() {
   const [graph, setGraph] = useState<GraphData>({ nodes: [], edges: [] })
   const [loading, setLoading] = useState(true)
+  const [resetting, setResetting] = useState(false)
   const [selected, setSelected] = useState<{ id: string; label: string } | null>(null)
   const [turns, setTurns] = useState<ConversationTurn[]>([])
   const [turnsLoading, setTurnsLoading] = useState(false)
 
-  useEffect(() => { api.graph().then((g) => { setGraph(g); setLoading(false) }).catch(() => setLoading(false)) }, [])
+  async function loadGraph() {
+    setLoading(true)
+    try {
+      setGraph(await api.graph())
+    } catch {
+      setGraph({ nodes: [], edges: [] })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadGraph() }, [])
+
+  async function handleReset() {
+    if (!window.confirm(
+      'Clear all topic tags and the knowledge graph?\n\nImported conversations stay — run Analysis again to rebuild with domain hubs (Web, Data, ML…).',
+    )) return
+    setResetting(true)
+    try {
+      await api.resetAnalysis()
+      setSelected(null)
+      setTurns([])
+      await loadGraph()
+    } finally {
+      setResetting(false)
+    }
+  }
 
   async function handleNodeClick(nodeId: string, label: string) {
-    setSelected({ id: nodeId, label }); setTurnsLoading(true)
-    try { setTurns(await api.conceptTurns(Number(nodeId))) } catch { setTurns([]) }
+    setSelected({ id: nodeId, label })
+    setTurnsLoading(true)
+    try {
+      setTurns(await api.conceptTurns(Number(nodeId)))
+    } catch {
+      setTurns([])
+    }
     setTurnsLoading(false)
   }
+
+  const topicCount = graph.nodes.filter((n) => n.node_type !== 'domain').length
+  const domainCount = new Set(
+    graph.nodes.filter((n) => n.node_type !== 'domain').map((n) => n.category),
+  ).size
 
   return (
     <div className="flex h-full">
@@ -30,17 +67,26 @@ export function GraphPage() {
           </div>
         ) : <GraphView data={graph} onNodeClick={handleNodeClick} />}
 
-        <div className="absolute top-4 left-4 glass px-5 py-4 pointer-events-none animate-fade-in">
-          <div className="font-display text-sm font-bold mb-2 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+        <div className="absolute top-4 left-4 glass px-5 py-4 animate-fade-in flex flex-col gap-2" style={{ pointerEvents: 'auto' }}>
+          <div className="font-display text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/><line x1="15" y1="6" x2="9" y2="6"/></svg>
             Knowledge Graph
           </div>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            <span className="tabular-nums font-semibold" style={{ color: 'var(--accent)' }}>{graph.nodes.length}</span> concepts
-            <span className="mx-1.5" style={{ color: 'var(--text-faint)' }}>/</span>
-            <span className="tabular-nums font-semibold" style={{ color: 'var(--accent-secondary)' }}>{graph.edges.length}</span> connections
-          </div>
-          <div className="text-[11px] mt-1.5" style={{ color: 'var(--text-faint)' }}>Click a node to explore history</div>
+          <GraphLegend domainCount={domainCount} topicCount={topicCount} />
+          <div className="text-[11px]" style={{ color: 'var(--text-faint)' }}>Scroll to zoom · drag nodes · click topic to explore</div>
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={resetting}
+            className="mt-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 transition-opacity"
+            style={{
+              background: 'color-mix(in srgb, var(--accent-warm) 15%, transparent)',
+              color: 'var(--accent-warm)',
+              border: '1px solid color-mix(in srgb, var(--accent-warm) 35%, transparent)',
+            }}
+          >
+            {resetting ? 'Resetting…' : 'Reset tags & rebuild'}
+          </button>
         </div>
       </div>
 

@@ -8,16 +8,16 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from deepreflect.analysis.llm_client import LLMClient
+from deepreflect.analysis.domains import backfill_domain_mentions, record_turn_tags
 from deepreflect.analysis.tagger import tag_turn
 from deepreflect.config import load_config
 from deepreflect.memory.db import (
+    clear_analysis,
     count_unanalyzed_turns,
-    get_or_create_concept,
     get_session,
     get_unanalyzed_date_bounds,
     get_unanalyzed_turns,
     get_unanalyzed_turns_for_analysis,
-    record_mention,
     resolve_period,
 )
 
@@ -187,9 +187,7 @@ async def run_analysis(
         for turn in turns:
             try:
                 concepts, category = await tag_turn(turn, llm)
-                for concept_name in concepts:
-                    concept = get_or_create_concept(session, concept_name, category)
-                    record_mention(session, turn, concept)
+                record_turn_tags(session, turn, concepts, category)
                 turn.analyzed = True
                 session.add(turn)
                 session.commit()
@@ -197,6 +195,7 @@ async def run_analysis(
             except Exception:
                 errors += 1
 
+        backfill_domain_mentions(session)
         remaining = count_unanalyzed_turns(session)
     return {"processed": processed, "errors": errors, "remaining": remaining}
 
@@ -252,9 +251,7 @@ async def analyze_stream(
                 label = (turn.user_prompt or "(empty)")[:60].replace("\n", " ")
                 try:
                     concepts, category = await tag_turn(turn, llm)
-                    for concept_name in concepts:
-                        concept = get_or_create_concept(session, concept_name, category)
-                        record_mention(session, turn, concept)
+                    record_turn_tags(session, turn, concepts, category)
                     turn.analyzed = True
                     session.add(turn)
                     session.commit()
@@ -277,6 +274,7 @@ async def analyze_stream(
                     }
                 ) + "\n"
 
+            backfill_domain_mentions(session)
             remaining = count_unanalyzed_turns(session)
             yield json.dumps(
                 {
@@ -290,6 +288,15 @@ async def analyze_stream(
             ) + "\n"
 
     return StreamingResponse(event_stream(), media_type="application/x-ndjson")
+
+
+@router.post("/reset")
+async def reset_analysis():
+    """Clear all topic tags and reset turns for re-analysis. Keeps conversations."""
+    cfg = load_config()
+    with get_session(cfg.db_path) as session:
+        cleared = clear_analysis(session)
+    return {"cleared": cleared, "message": "Analysis tags cleared. Run Analysis to rebuild the graph."}
 
 
 @router.get("/status")

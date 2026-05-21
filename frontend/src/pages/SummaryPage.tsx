@@ -28,14 +28,14 @@ export function SummaryPage() {
 
   async function generate() {
     setLoading(true)
-    const url = api.generateSummary(selected)
+    const url = `${api.generateSummary(selected)}?t=${Date.now()}`
     window.open(url, '_blank')
     setLoading(false)
   }
 
   async function roast() {
     setRoasting(true)
-    window.open('/api/summary/roast', '_blank')
+    window.open(`/api/summary/roast?t=${Date.now()}`, '_blank')
     // Brief delay so button feels responsive
     setTimeout(() => setRoasting(false), 1500)
   }
@@ -58,10 +58,9 @@ export function SummaryPage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2"/><path d="M12 8v4l3 3"/></svg>
           </div>
           <div className="flex-1">
-            <div className="font-display text-base font-bold" style={{ color: 'var(--text-primary)' }}>Chat History Roast</div>
+            <div className="font-display text-base font-bold" style={{ color: 'var(--text-primary)' }}>Vibe Roast</div>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Let the AI roast your conversation habits in the style of <strong style={{ color: 'var(--text-secondary)' }}>TechRoast</strong>.
-              It'll call out your repeated questions and give you a brutally honest score.
+              Let DeepReflect roast your AI chat habits based on your imported Cursor / Claude history!
             </p>
           </div>
         </div>
@@ -72,7 +71,7 @@ export function SummaryPage() {
             ? <><div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,.3)', borderTopColor: 'white' }} /> Generating Roast…</>
             : <>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-                Get Roasted
+                Open Vibe Roast
               </>
           }
         </button>
@@ -100,33 +99,14 @@ export function SummaryPage() {
         </div>
       </div>
 
-      <div className="glass p-6 space-y-4 animate-fade-in-up stagger-3">
-        <div className="section-label">What's included</div>
-        <ul className="space-y-2.5">
-          {[
-            'Activity heatmap — 30 days at a glance',
-            'Top topics you asked about in this period',
-            'Knowledge breakdown by category',
-            'Repeated weak areas flagged for review',
-            'AI tools used and usage counts',
-            'Export to PNG — share it like a year-end wrap',
-          ].map((item) => (
-            <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-
       <button onClick={generate} disabled={loading}
-        className="w-full py-3.5 text-[13px] font-semibold rounded-[14px] transition-all duration-300 disabled:opacity-40 flex items-center justify-center gap-2 animate-fade-in-up stagger-4 cursor-pointer"
+        className="w-full py-3.5 text-[13px] font-semibold rounded-[14px] transition-all duration-300 disabled:opacity-40 flex items-center justify-center gap-2 animate-fade-in-up stagger-3 cursor-pointer"
         style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-secondary))', color: 'white', boxShadow: '0 4px 24px color-mix(in srgb, var(--accent) 30%, transparent)' }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
         {loading ? 'Generating...' : `Generate ${PERIODS.find((p) => p.value === selected)?.label} Summary`}
       </button>
 
-      <p className="text-[11px] text-center animate-fade-in-up stagger-5" style={{ color: 'var(--text-faint)' }}>
+      <p className="text-[11px] text-center animate-fade-in-up stagger-4" style={{ color: 'var(--text-faint)' }}>
         Also via CLI:{' '}
         <code className="font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--surface-raised)', color: 'color-mix(in srgb, var(--accent) 70%, var(--text-muted))' }}>deepreflect summary --period {selected}</code>
       </p>

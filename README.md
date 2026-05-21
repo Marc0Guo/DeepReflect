@@ -59,6 +59,14 @@ DeepReflect currently includes:
 
 Planned and post-MVP sources include ChatGPT exports, Cursor logs, Gemini exports, and OpenCode plugins.
 
+### Cursor Agent Skills
+
+| Skill | Description | Install |
+|-------|-------------|---------|
+| [chat-history-roast](./skills/chat-history-roast/) | **Vibe Roast** HTML (zh/en) for any agent; chat context or `extract_cursor` / `extract_claude` | `cd skills/chat-history-roast && npm install` |
+
+See [`skills/chat-history-roast/README.md`](./skills/chat-history-roast/README.md) for usage with pasted Claude/Cursor/ChatGPT logs.
+
 <a id="user-guide"></a>
 ## User Guide
 

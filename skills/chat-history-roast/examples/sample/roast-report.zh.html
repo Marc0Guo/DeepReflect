@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Vibe Roast · 中文样本</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --ink: #2a2340; --ink-soft: #6b6280;
+    --bg1: #e8f7ff; --bg2: #fff6e8; --hi: #fff066;
+    --pop: #ff4d8d; --pop2: #7c5cff;
+    --mint: #b8f5e4; --lemon: #fff3a8; --coral: #ffd4e8;
+    --sky: #c8e4ff; --lilac: #e4d4ff; --orange: #ffd9b8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: 17px; line-height: 1.5; color: var(--ink);
+    padding: 28px 0 100px;
+    background: linear-gradient(160deg, var(--bg1) 0%, #f5eeff 45%, var(--bg2) 100%);
+    background-attachment: fixed;
+  }
+  .page { width: 900px; margin: 0 auto; padding: 0 28px 40px; position: relative; }
+  em {
+    font-style: normal;
+    background-image: linear-gradient(var(--hi), var(--hi));
+    background-repeat: no-repeat;
+    background-size: 100% 0.38em;
+    background-position: 0 100%;
+    padding: 0 3px;
+  }
+  .danger { color: var(--pop); text-decoration: underline wavy var(--pop); text-underline-offset: 3px; }
+  .page::before {
+    content: ''; position: absolute; inset: -20px; opacity: 0.35; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(circle, var(--pop) 2px, transparent 2.5px),
+      radial-gradient(circle, var(--pop2) 1.5px, transparent 2px),
+      radial-gradient(circle, #ffd166 2px, transparent 2.5px);
+    background-size: 120px 80px, 90px 70px, 140px 100px;
+  }
+  .page > * { position: relative; z-index: 1; }
+  .party-header { text-align: center; padding: 36px 20px 28px; position: relative; }
+  .party-header .ribbon {
+    display: inline-block; background: var(--pop); color: #fff;
+    font-family: 'Fredoka', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 6px 18px; border-radius: 999px; transform: rotate(-2deg);
+    box-shadow: 0 4px 0 rgba(255, 77, 141, 0.35); margin-bottom: 10px;
+  }
+  .party-header .brand {
+    margin: 0;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    color: var(--pop2);
+    text-transform: uppercase;
+  }
+  .party-header h1 {
+    margin: 6px 0 0;
+    font-family: 'ZCOOL KuaiLe', 'Fredoka', sans-serif;
+    font-size: 58px; line-height: 1.1; color: var(--pop2);
+    text-shadow: 3px 3px 0 var(--lemon), 6px 6px 0 rgba(124, 92, 255, 0.15);
+  }
+  .party-header .tagline { margin: 12px 0 0; font-size: 17px; color: var(--ink-soft); font-weight: 600; }
+  .party-header .sub-meme { margin: 6px 0 0; font-size: 14px; color: var(--pop); font-weight: 700; }
+  .score-sticker {
+    position: absolute; top: 12px; right: 0; width: 132px; padding: 16px 12px;
+    background: var(--lemon); border: 3px solid var(--ink); border-radius: 20px 20px 20px 4px;
+    transform: rotate(8deg); box-shadow: 5px 6px 0 rgba(42, 35, 64, 0.15); text-align: center;
+  }
+  .score-sticker .big { font-family: 'Fredoka', sans-serif; font-size: 48px; line-height: 1; color: var(--pop); }
+  .score-sticker .lbl { font-size: 11px; font-weight: 700; line-height: 1.25; margin-top: 6px; }
+  .stat-bubbles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0 28px; }
+  .bubble {
+    text-align: center; padding: 16px 10px; border-radius: 18px; border: 2px solid var(--ink);
+    box-shadow: 4px 5px 0 rgba(42, 35, 64, 0.1); transform: rotate(var(--r, 0deg));
+  }
+  .bubble:nth-child(1) { background: var(--mint); --r: -2deg; }
+  .bubble:nth-child(2) { background: var(--coral); --r: 1.5deg; }
+  .bubble:nth-child(3) { background: var(--sky); --r: -1deg; }
+  .bubble:nth-child(4) { background: var(--lilac); --r: 2deg; }
+  .bubble .n { font-family: 'Fredoka', sans-serif; font-size: 32px; line-height: 1; color: var(--pop2); }
+  .bubble .k { font-size: 11px; font-weight: 700; color: var(--ink-soft); margin-top: 6px; line-height: 1.2; }
+  .tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Fredoka', sans-serif; font-size: 22px; font-weight: 600;
+    background: #fff; border: 2px solid var(--ink); border-radius: 12px 12px 0 0;
+    padding: 8px 16px; margin-bottom: -2px; position: relative; z-index: 2;
+  }
+  .block {
+    padding: 20px 22px; border: 2px solid var(--ink); border-radius: 0 20px 20px 20px;
+    margin-bottom: 22px; box-shadow: 6px 8px 0 rgba(42, 35, 64, 0.08); position: relative;
+  }
+  .block.mint { background: var(--mint); transform: rotate(-0.6deg); }
+  .block.lemon { background: var(--lemon); transform: rotate(0.8deg); }
+  .block.coral { background: var(--coral); transform: rotate(-0.4deg); }
+  .block.sky { background: var(--sky); transform: rotate(0.5deg); }
+  .block.lilac { background: var(--lilac); transform: rotate(-0.7deg); }
+  .block.orange { background: var(--orange); }
+  .block .lead { font-family: 'Fredoka', sans-serif; font-size: 26px; margin: 0 0 12px; line-height: 1.25; color: var(--pop2); }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .bar-row .name { width: 168px; font-size: 15px; font-weight: 700; }
+  .bar-track { flex: 1; height: 18px; background: rgba(255,255,255,.65); border: 2px solid var(--ink); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--pop), var(--pop2)); }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .pill {
+    font-size: 13px; font-weight: 700; padding: 5px 14px; background: #fff;
+    border: 2px solid var(--ink); border-radius: 999px; transform: rotate(var(--pr, 0deg));
+  }
+  .pill:nth-child(odd) { --pr: -2deg; }
+  .pill:nth-child(even) { --pr: 1deg; }
+  .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mini {
+    background: rgba(255,255,255,.55); border: 2px dashed var(--ink-soft);
+    border-radius: 14px; padding: 12px 14px; font-size: 15px;
+  }
+  .mini .emoji { font-size: 22px; display: block; margin-bottom: 4px; }
+  .speech {
+    position: relative; background: #fff; border: 2px solid var(--ink); border-radius: 20px;
+    padding: 18px 20px; margin: 12px 0; font-family: 'Fredoka', sans-serif;
+    font-size: 19px; line-height: 1.35; color: var(--pop2);
+  }
+  .speech::after {
+    content: ''; position: absolute; bottom: -14px; left: 40px;
+    border: 12px solid transparent; border-top-color: var(--ink); border-top-width: 14px;
+  }
+  .speech::before {
+    content: ''; position: absolute; bottom: -10px; left: 42px; z-index: 1;
+    border: 10px solid transparent; border-top-color: #fff; border-top-width: 12px;
+  }
+  .side-note { font-size: 14px; color: var(--pop); font-weight: 700; margin-top: 18px; transform: rotate(-1deg); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .coaster-wrap svg { display: block; width: 100%; max-width: 820px; margin: 0 auto; }
+  .award {
+    text-align: center; padding: 28px 24px;
+    background: linear-gradient(135deg, var(--pop2) 0%, var(--pop) 100%);
+    color: #fff; border-radius: 24px; border: 3px solid var(--ink);
+    box-shadow: 8px 10px 0 rgba(42, 35, 64, 0.12); transform: rotate(-0.5deg); margin-top: 8px;
+  }
+  .award h2 { margin: 0 0 14px; font-family: 'ZCOOL KuaiLe', 'Fredoka', sans-serif; font-size: 28px; }
+  .award p { margin: 0 0 12px; opacity: 0.95; }
+  .award .final {
+    font-family: 'Fredoka', sans-serif; font-size: 22px; margin-top: 16px; padding-top: 14px;
+    border-top: 2px dashed rgba(255, 255, 255, 0.4);
+  }
+  .footer-card {
+    margin-top: 20px; padding: 22px; background: #fff; border: 2px solid var(--ink);
+    border-radius: 20px; text-align: center; transform: rotate(0.4deg);
+  }
+  .footer-card p { margin: 0; font-family: 'Fredoka', sans-serif; font-size: 20px; font-style: italic; color: var(--pop2); }
+  .footer-card .sign { margin-top: 10px; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+  .lang-pill {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    font-family: 'Fredoka', sans-serif; font-size: 12px; padding: 6px 12px;
+    background: #fff; border: 2px solid var(--ink); border-radius: 999px; text-decoration: none; color: var(--ink);
+  }
+  .export-bar { position: fixed; bottom: 20px; right: 20px; z-index: 99; }
+  .export-bar button {
+    font-family: 'Fredoka', sans-serif; font-size: 15px; padding: 12px 22px;
+    border-radius: 999px; border: 2px solid var(--ink); background: var(--lemon); cursor: pointer;
+    box-shadow: 4px 6px 0 rgba(42, 35, 64, 0.15);
+  }
+</style>
+</head>
+<body>
+
+<a class="lang-pill" href="roast-report.en.html">EN →</a>
+
+<div class="page" id="report-page">
+
+  <header class="party-header">
+    <div class="score-sticker">
+      <div class="big">37</div>
+      <div class="lbl">/100<br>脚手架批发商</div>
+    </div>
+    <span class="ribbon">🔥 vibe check 未通过 · 非 PPT 版</span>
+    <p class="brand">Vibe Roast</p>
+    <h1>你的聊天记录<br>被公开处刑了</h1>
+    <p class="tagline">4 次深夜对线 · 23 条 prompt · Cursor + Claude + git 已读乱回</p>
+    <p class="sub-meme">（温柔版处刑，不含年终总结 PPT，放心）</p>
+  </header>
+
+  <div class="stat-bubbles">
+    <div class="bubble"><div class="n">37</div><div class="k">Vibe 破产分</div></div>
+    <div class="bubble"><div class="n">78%</div><div class="k">「你看着办」班味</div></div>
+    <div class="bubble"><div class="n">6×</div><div class="k">CORS 阴魂不散</div></div>
+    <div class="bubble"><div class="n">9.2</div><div class="k">2019 会自己搜（已退役）</div></div>
+  </div>
+
+  <div class="tab">🎤 开场 vibe check</div>
+  <div class="block lemon">
+    <p class="lead">你不是在 debug，你是在跟模型 <em>开光</em>。</p>
+    <p>固定节目：白屏养生 → 仓库 Ctrl+V 自助餐 →「帮我修」三连 → 凌晨发朋友圈说要 <em>重写宇宙</em>。Git 里 feature 没 merge 几个，<em>wip</em> 倒是噼里啪啦像过年鞭炮 —— 恭喜解锁<strong>氛围感全栈</strong>（指氛围到位，栈没到）。</p>
+  </div>
+
+  <div class="tab">📊 精神状态面板</div>
+  <div class="block mint">
+    <div class="bar-row"><span class="name">原地鬼打墙</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div></div>
+    <div class="bar-row"><span class="name">框架观光打卡</span><div class="bar-track"><div class="bar-fill" style="width:74%"></div></div></div>
+    <div class="bar-row"><span class="name">让 AI 代读文档</span><div class="bar-track"><div class="bar-fill" style="width:91%"></div></div></div>
+    <div class="bar-row"><span class="name">真的 ship 了</span><div class="bar-track"><div class="bar-fill" style="width:19%"></div></div></div>
+    <div class="pills">
+      <span class="pill">Cursor ×14（ panic 专线 ）</span>
+      <span class="pill">git reset ×3（ 时光机用户 ）</span>
+      <span class="pill">「我这边能跑」×∞</span>
+      <span class="pill">npm i 当解药 ×若干</span>
+      <span class="pill">auth TODO ×3（ 留给下辈子的你 ）</span>
+    </div>
+  </div>
+
+  <div class="tab">🧃 踩坑盲盒口味</div>
+  <div class="block sky">
+    <div class="mini-grid">
+      <div class="mini"><span class="emoji">🔄</span><strong>等等为啥但换个问法</strong><br>同一报错，形容词迭代，根因静止。</div>
+      <div class="mini"><span class="emoji">📋</span><strong>堆栈降神</strong><br>4000 行 trace 供奉，零个问题描述 — 赛博烧香。</div>
+      <div class="mini"><span class="emoji">🧪</span><strong>三态仙人</strong><br>zustand + redux + context 同夜飞升，状态管理开派对。</div>
+      <div class="mini"><span class="emoji">🦀</span><strong>Rust 在肺里</strong><br>TODO：预计永不 compile，但 vibe 很硬核。</div>
+    </div>
+  </div>
+
+  <div class="tab">💥 冥场面回放</div>
+  <div class="block coral">
+    <div class="speech">「ok new plan what if we use zustand AND redux AND context also migrate to next.js 15 app router tonight」</div>
+    <p class="side-note">👈 鉴定：建议申报非遗 ——「一夜换栈勇气奖」候选人，导师看了想退群</p>
+    <div class="split">
+      <div class="mini">
+        <span class="emoji">🔁</span>
+        <strong>复读机成精</strong><br>
+        只修表象不读红字，CORS/auth 第六次轮回，属于 <em>电子鬼打墙</em>。
+      </div>
+      <div class="mini">
+        <span class="emoji">🐍</span>
+        <strong>本可一行脚本</strong><br>
+        200 文件改名：你说 <em>「你直接跑 我不想看」</em> —— 官方认证 <span class="danger">好奇心外包</span>，眼睛是摆设。
+      </div>
+    </div>
+    <p style="margin-top:16px;font-family:'Fredoka',sans-serif;font-size:20px;color:var(--pop)">
+      ⚠️ 高危 vibe：三重全局状态 + 午夜 App Router 迁移（上线？随缘；班味？拉满。）
+    </p>
+  </div>
+
+  <div class="tab">🎢 情绪过山车（无安全带）</div>
+  <div class="block lilac coaster-wrap">
+    <svg viewBox="0 0 820 140" aria-hidden="true">
+      <path d="M30,90 C120,30 200,110 300,50 S480,20 580,75 S700,100 790,35" fill="none" stroke="#7c5cff" stroke-width="4" stroke-linecap="round" stroke-dasharray="8 6"/>
+      <circle cx="30" cy="90" r="8" fill="#ff4d8d"/>
+      <circle cx="200" cy="75" r="8" fill="#ffd166"/>
+      <circle cx="380" cy="55" r="8" fill="#ff4d8d"/>
+      <circle cx="560" cy="78" r="8" fill="#7c5cff"/>
+      <circle cx="790" cy="35" r="8" fill="#2a2340"/>
+      <text x="18" y="125" font-family="Nunito" font-size="13" font-weight="700" fill="#6b6280">还能跑</text>
+      <text x="165" y="125" font-family="Nunito" font-size="13" font-weight="700" fill="#6b6280">粘贴仓库</text>
+      <text x="355" y="125" font-family="Nunito" font-size="13" font-weight="700" fill="#6b6280">红温了</text>
+      <text x="525" y="125" font-family="Nunito" font-size="13" font-weight="700" fill="#6b6280">换新栈！</text>
+      <text x="745" y="125" font-family="Nunito" font-size="13" font-weight="700" fill="#6b6280">睡了吗（没）</text>
+    </svg>
+  </div>
+
+  <div class="tab">🤖 赛博依赖说明书</div>
+  <div class="block orange">
+    <p>• <strong>78%</strong> prompt 以「你修 / 你跑」结尾 —— 副驾驶上岗，你负责 <em>已读乱回</em>。<br>
+    • 分工：Cursor 管 panic，Claude 管杂活，你管 <em>突然改需求</em>。<br>
+    • Stack Overflow 退役指数 <strong>9.2/10</strong> —— 不是不会搜，是搜了也要让 AI 总结成「人话」。<br>
+    • 精神状态：表面 calm，内心 <strong>npm ERR!</strong> 循环播放。</p>
+  </div>
+
+  <div class="award">
+    <h2>🏆 Vibe Roast 终极大赏</h2>
+    <p>你把 AI 当无限耐心、不用上下文的高级同事 —— 历史记录是 <em>带语法高亮的情绪外包</em>，不是学习曲线，是电子咸菜。</p>
+    <p>全年最诚实 3 秒：「给我 rename 脚本」。之后「不想看」升级为 lifestyle，文档？不存在的。</p>
+    <p>Git log 俳句实锤：<strong>wip · maybe fix · revert · asdf</strong> —— 不是版本管理，是心情朋友圈。</p>
+    <p class="final">Vibe 分 <strong>37/100</strong> · 升级攻略：删一个状态库 + 读完一条报错（读完就行，不用懂）→ 有望 45，still 不及格但体面</p>
+  </div>
+
+  <div class="footer-card">
+    <p>「慢性框架 TOURISM + 急性粘贴依赖。预后：更多支线，更少睡眠。」</p>
+    <p class="sign">— Vibe Roast 鉴毒所 · 非官方 · 2026</p>
+  </div>
+
+</div>
+
+<div class="export-bar" id="export-bar">
+  <button type="button" id="save-png">📸 导出 PNG</button>
+</div>
+
+<script>
+document.getElementById('save-png').addEventListener('click', async () => {
+  if (typeof html2canvas !== 'function') { alert('html2canvas not loaded'); return }
+  const bar = document.getElementById('export-bar');
+  bar.style.display = 'none';
+  if (document.fonts?.ready) await document.fonts.ready;
+  const target = document.getElementById('report-page');
+  const canvas = await html2canvas(target, { backgroundColor:'#e8f7ff', scale:2, useCORS:true, logging:false, windowWidth:956 });
+  const link = document.createElement('a');
+  link.download = 'vibe-roast-zh.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  bar.style.display = '';
+});
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
 
 from deepreflect.agents.roast_generator import generate_roast_html
 from deepreflect.agents.summary_generator import generate_summary_html
@@ -70,7 +70,14 @@ async def generate(period: str = "weekly"):
     cfg = load_config()
     with get_session(cfg.db_path) as session:
         out_path = generate_summary_html(session, period, cfg.summaries_dir)
-    return FileResponse(out_path, media_type="text/html")
+    html = out_path.read_text(encoding="utf-8")
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
 
 
 @router.get("/roast", response_class=HTMLResponse)
@@ -83,7 +90,14 @@ async def roast():
     llm_client = LLMClient.from_config(cfg)
     with get_session(cfg.db_path) as session:
         out_path = await generate_roast_html(session, llm_client, cfg.summaries_dir)
-    return FileResponse(out_path, media_type="text/html")
+    html = out_path.read_text(encoding="utf-8")
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
 
 
 @router.get("/list")
