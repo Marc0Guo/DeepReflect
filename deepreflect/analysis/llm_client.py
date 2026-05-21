@@ -67,11 +67,17 @@ class LLMClient:
                 {"role": "user", "content": user},
             ],
         }
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(url, headers=headers, json=body)
             resp.raise_for_status()
             data = resp.json()
-            return data["choices"][0]["message"]["content"]
+            msg = data["choices"][0]["message"]
+            text = (msg.get("content") or "").strip()
+            # Ollama thinking models (e.g. qwen3) may spend the token budget on
+            # "reasoning" and leave content empty when max_tokens is small.
+            if not text:
+                text = (msg.get("reasoning") or "").strip()
+            return text
 
     @classmethod
     def from_config(cls, cfg) -> "LLMClient":

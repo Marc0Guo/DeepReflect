@@ -159,7 +159,7 @@ async def tag_turn(turn: ConversationTurn, llm: LLMClient) -> tuple[list[str], s
     """Return (concepts, category) for a single conversation turn."""
     prompt = f"User asked:\n{turn.user_prompt[:800]}\n\nAI replied:\n{turn.ai_response[:400]}"
     try:
-        raw = await llm.complete(_SYSTEM, prompt, max_tokens=256)
+        raw = await llm.complete(_SYSTEM, prompt, max_tokens=1024)
         m = _EXTRACT_RE.search(raw)
         if not m:
             return [], "general"
