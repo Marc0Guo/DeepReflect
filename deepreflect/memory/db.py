@@ -233,6 +233,15 @@ def get_flashcards(session: Session, concept_id: Optional[int] = None) -> list[F
     return list(session.exec(stmt))
 
 
+def delete_flashcard(session: Session, card_id: int) -> bool:
+    card = session.get(Flashcard, card_id)
+    if card is None:
+        return False
+    session.delete(card)
+    session.commit()
+    return True
+
+
 # --- Dashboard filters ---
 
 WEAK_ASK_THRESHOLD = 4  # matches weak_score >= 0.4 in ConceptTable

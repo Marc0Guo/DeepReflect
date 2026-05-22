@@ -222,11 +222,14 @@ export function StudyPage() {
     setQuizLoading(false)
   }
 
+  const generatingRef = useRef(false)
   async function generateCards() {
+    if (generatingRef.current) return
+    generatingRef.current = true
     setGenerating(true)
     setFlashcardNotice(null)
     try {
-      const r = await api.generateFlashcards(15)
+      const r = await api.generateFlashcards(1)
       setFlashcards(await api.flashcards())
       if (r.generated === 0) {
         setFlashcardNotice(
@@ -241,6 +244,7 @@ export function StudyPage() {
       )
     }
     setGenerating(false)
+    generatingRef.current = false
   }
 
   function toggleFlip(id: number) {
@@ -249,6 +253,17 @@ export function StudyPage() {
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+  }
+
+  async function deleteCard(e: React.MouseEvent, id: number) {
+    e.stopPropagation()
+    try {
+      await api.deleteFlashcard(id)
+      setFlashcards((prev) => prev.filter((c) => c.id !== id))
+      setFlipped((prev) => { const next = new Set(prev); next.delete(id); return next })
+    } catch {
+      // silently ignore
+    }
   }
 
   const historyQuizSelected  = quizHistory.find((h) => h.id === selectedQuizId)
@@ -329,6 +344,19 @@ export function StudyPage() {
                 >
                   <div className="absolute top-0 left-0 w-full h-[2px] opacity-50"
                     style={{ background: flipped.has(c.id) ? 'linear-gradient(90deg, var(--accent-secondary), transparent)' : 'linear-gradient(90deg, var(--accent), transparent)' }} />
+
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => deleteCard(e, c.id)}
+                    className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                    style={{ background: 'color-mix(in srgb, var(--accent-warm) 15%, transparent)', color: 'var(--accent-warm)' }}
+                    title="Delete card"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: flipped.has(c.id) ? 'var(--accent-secondary)' : 'var(--accent)' }} />
                     <span className="section-label">{flipped.has(c.id) ? 'Answer' : 'Question'}</span>

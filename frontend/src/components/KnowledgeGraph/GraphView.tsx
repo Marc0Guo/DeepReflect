@@ -208,7 +208,7 @@ export function GraphView({ data, onNodeClick }: Props) {
         l.edgeType === 'hub' ? 1.5 : l.edgeType === 'peer' ? 1 : 1.2,
       )
       .attr('stroke-opacity', (l) =>
-        l.edgeType === 'hub' ? 0.40 : l.edgeType === 'peer' ? 0.20 : 0.55,
+        l.edgeType === 'hub' ? 0.60 : l.edgeType === 'peer' ? 0.20 : 0.55,
       )
       .attr('stroke-dasharray', (l) =>
         l.edgeType === 'cross' ? '6 4' : l.edgeType === 'peer' ? '3 4' : null,
@@ -361,7 +361,6 @@ export function GraphView({ data, onNodeClick }: Props) {
   }, [init])
 
   const topicCount = data.nodes.filter((n) => n.node_type !== 'domain').length
-  const domainCount = data.nodes.filter((n) => n.node_type === 'domain').length
 
   if (!topicCount) {
     return (

@@ -283,8 +283,6 @@ export function SettingsPage() {
         llm_api_key: '',
         llm_model: s.llm_model,
         llm_base_url: s.llm_base_url,
-        intervention_tone: s.intervention_tone,
-        repeat_threshold: s.repeat_threshold,
         notify_enabled: s.notify_enabled ?? false,
         notify_time: s.notify_time ?? '21:00',
         notify_channels: (s.notify_channels ?? []).filter((c) => c === 'discord' || c === 'slack'),
@@ -582,9 +580,9 @@ export function SettingsPage() {
                 </div>
               </div>
 
-              {ch.warning && (
+              {'warning' in ch && typeof ch.warning === 'string' ? (
                 <p className="text-[11px]" style={{ color: 'var(--accent-warm)' }}>{ch.warning}</p>
-              )}
+              ) : null}
 
               {active && ch.fields.map((f) => (
                 <div key={f.key}>

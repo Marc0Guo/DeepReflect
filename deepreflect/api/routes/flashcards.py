@@ -13,6 +13,7 @@ from deepreflect.agents.study_agent import generate_flashcards, generate_quiz, g
 from deepreflect.analysis.llm_client import LLMClient
 from deepreflect.config import llm_is_ready, load_config
 from deepreflect.memory.db import (
+    delete_flashcard,
     get_content_history,
     get_flashcards,
     get_session,
@@ -24,7 +25,7 @@ router = APIRouter(prefix="/study", tags=["study"])
 
 
 class GenerateFlashcardsRequest(BaseModel):
-    limit: int = Field(default=10, ge=1, le=100)
+    limit: int = Field(default=1, ge=1, le=100)
     concept_id: int | None = None
 
 
@@ -71,6 +72,16 @@ async def gen_flashcards(body: GenerateFlashcardsRequest):
             )
 
     return {"generated": len(cards), "detail": detail}
+
+
+@router.delete("/flashcards/{card_id}")
+async def remove_flashcard(card_id: int):
+    cfg = load_config()
+    with get_session(cfg.db_path) as session:
+        deleted = delete_flashcard(session, card_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Flashcard {card_id} not found")
+    return {"deleted": card_id}
 
 
 @router.get("/flashcards/export")

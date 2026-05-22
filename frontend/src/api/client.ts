@@ -101,6 +101,11 @@ export const api = {
       limit,
       ...(conceptId != null ? { concept_id: conceptId } : {}),
     }),
+  deleteFlashcard: (id: number) => {
+    return fetch(`${BASE}/study/flashcards/${id}`, { method: 'DELETE' }).then((r) => {
+      if (!r.ok) throw new Error(`${r.status}`)
+    })
+  },
   studyGuide: (period = 'this week') =>
     get<{ guide: string }>(`/study/guide?period=${encodeURIComponent(period)}`, 180_000),
   quiz: () => get<{ questions: import('../types').QuizQuestion[] }>('/study/quiz', 180_000),
